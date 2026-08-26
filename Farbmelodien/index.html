@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entdecke Farbmelodien - Musik in Farben</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&display=swap');
+
+        /* === Estilos Base === */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #fdfbfb 0%, #ffecd2 100%);
+            min-height: 100vh;
+            color: #1f2937;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        ::selection {
+            background-color: #fed7aa;
+            color: #7c2d12;
+        }
+
+        /* === Utilidades Generales === */
+        .container {
+            max-width: 64rem;
+            margin: 0 auto;
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+        }
+
+        .text-center { text-align: center; }
+        
+        /* === Colores del Proyecto Original === */
+        .bg-c-red { background-color: #ff3344; }
+        .bg-d-orange { background-color: #ff8c00; }
+        .bg-e-yellow { background-color: #ffe000; }
+        .bg-f-lgreen { background-color: #a2ff33; }
+        .bg-g-dgreen { background-color: #00c853; }
+        .bg-a-blue { background-color: #1a1aff; }
+        .bg-h-pink { background-color: #ff33ee; }
+
+        /* === Elementos Visuales y Animaciones === */
+        .note-dot {
+            box-shadow: inset -4px -4px 8px rgba(0,0,0,0.15), 0 5px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .note-dot:hover {
+            transform: scale(1.15) translateY(-5px);
+        }
+
+        .pill-shape {
+            border-radius: 50px;
+            box-shadow: inset -4px -4px 8px rgba(0,0,0,0.15), 0 5px 8px rgba(0,0,0,0.1);
+        }
+
+        .floating {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* === Tipografía === */
+        .title {
+            font-size: 3rem;
+            font-weight: 900;
+            color: #f97316;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.025em;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+        }
+        
+        .subtitle {
+            font-size: 1.25rem;
+            color: #4b5563;
+            font-weight: 600;
+            max-width: 42rem;
+            margin: 0 auto;
+            line-height: 1.625;
+        }
+
+        .section-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+
+        .text-body {
+            font-size: 1.125rem;
+            color: #4b5563;
+            margin-bottom: 1rem;
+            line-height: 1.625;
+        }
+
+        /* === Layout (Header y Secciones) === */
+        .header {
+            padding-top: 4rem;
+            padding-bottom: 3rem;
+        }
+
+        .header-dots {
+            display: inline-flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .dot-sm {
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+        }
+
+        .main-content {
+            padding-bottom: 5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 3rem;
+        }
+
+        .card {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .blur-blob {
+            position: absolute;
+            right: -2.5rem;
+            top: -2.5rem;
+            width: 10rem;
+            height: 10rem;
+            background-color: #ffedd5;
+            border-radius: 50%;
+            filter: blur(24px);
+            opacity: 0.6;
+            z-index: 0;
+        }
+
+        .card-content {
+            position: relative;
+            z-index: 10;
+        }
+
+        .flex-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+            align-items: center;
+        }
+
+        .col-half { width: 100%; }
+
+        /* === Ejemplos de Notas (Layout) === */
+        .grid-notes {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            width: fit-content;
+            margin: 0 auto;
+        }
+
+        .note-lg {
+            width: 6rem;
+            height: 6rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .note-pill-lg {
+            grid-column: span 2;
+            width: 100%;
+            height: 6rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        /* === Escala de Colores === */
+        .scale-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .scale-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: default;
+        }
+
+        .note-md {
+            width: 4rem;
+            height: 4rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: 700;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            margin-bottom: 0.75rem;
+        }
+
+        .text-white { color: white; }
+        .text-dark { color: #1f2937; }
+
+        .scale-label {
+            font-weight: 700;
+            color: #374151;
+            transition: color 0.3s;
+        }
+
+        .scale-item:hover .hover-c { color: #ef4444; }
+        .scale-item:hover .hover-d { color: #f97316; }
+        .scale-item:hover .hover-e { color: #eab308; }
+        .scale-item:hover .hover-f { color: #4ade80; }
+        .scale-item:hover .hover-g { color: #16a34a; }
+        .scale-item:hover .hover-a { color: #3b82f6; }
+        .scale-item:hover .hover-h { color: #ec4899; }
+
+        /* === Ritmo (Tarjetas de Ejemplos) === */
+        .rhythm-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            align-items: center;
+            width: 100%;
+        }
+
+        .rhythm-card {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 24rem;
+            background-color: #f9fafb;
+            padding: 1rem;
+            border-radius: 1rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border: 1px solid #f3f4f6;
+        }
+
+        .circle-icon {
+            width: 4rem;
+            height: 4rem;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .pill-icon {
+            width: 8rem;
+            height: 4rem;
+            flex-shrink: 0;
+        }
+
+        /* === Características (Grid 3 columnas) === */
+        .features-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .feature-box {
+            background-color: rgba(255,255,255,0.8);
+            backdrop-filter: blur(8px);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .feature-box:hover {
+            transform: translateY(-0.5rem);
+        }
+
+        /* === Botón CTA === */
+        .btn-cta {
+            display: inline-block;
+            background: linear-gradient(to right, #fb923c, #ea580c);
+            color: white;
+            font-weight: 700;
+            font-size: 1.25rem;
+            padding: 1rem 2.5rem;
+            border-radius: 50px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .btn-cta:hover {
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            transform: scale(1.05);
+        }
+
+        .footer {
+            text-align: center;
+            padding-bottom: 2rem;
+            color: #6b7280;
+            font-weight: 600;
+        }
+
+        /* === Responsive Media Queries === */
+        @media (min-width: 768px) {
+            .title { font-size: 3.75rem; }
+            .subtitle { font-size: 1.5rem; }
+            .card { padding: 3rem; }
+            .flex-layout { flex-direction: row; }
+            .col-half { width: 50%; }
+            .scale-grid { gap: 2rem; }
+            .note-md { width: 5rem; height: 5rem; }
+            .features-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="container header text-center">
+        <div class="header-dots floating">
+            <div class="dot-sm bg-c-red note-dot"></div>
+            <div class="dot-sm bg-e-yellow note-dot"></div>
+            <div class="dot-sm bg-a-blue note-dot"></div>
+        </div>
+        <h1 class="title">Farbmelodien</h1>
+        <p class="subtitle">
+            Ein visuelles und intuitives Lernsystem, das das musikalische Lernen in ein Spiel aus Farben und Formen verwandelt.
+        </p>
+    </header>
+
+    <main class="container main-content">
+        
+        <!-- Tarjeta: ¿Qué es? -->
+        <section class="card">
+            <div class="blur-blob"></div>
+            <div class="card-content flex-layout">
+                <div class="col-half">
+                    <h2 class="section-title">Worum geht es bei dem Projekt?</h2>
+                    <p class="text-body">
+                        <strong>Farbmelodien</strong> wurde entwickelt, um die Barrieren des traditionellen Notenlesens zu durchbrechen. 
+                        Es ist so konzipiert, dass Kinder, Anfänger und Pädagogen <strong>von der ersten Minute an</strong> musizieren können.
+                    </p>
+                    <p class="text-body">
+                        Anstelle der klassischen Notenlinien verwenden wir eine riesige grafische Partitur, in der jede Note eine bestimmte Farbe und jeder Rhythmus eine leicht verständliche Form hat.
+                    </p>
+                </div>
+                <div class="col-half text-center">
+                    <div class="grid-notes">
+                        <div class="note-lg bg-f-lgreen note-dot">F</div>
+                        <div class="note-lg bg-g-dgreen note-dot">G</div>
+                        <div class="note-pill-lg bg-c-red pill-shape note-dot">C (Lang)</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tarjeta: La Escala de Colores -->
+        <section class="card text-center">
+            <h2 class="section-title">Die Farbskala</h2>
+            <p class="text-body">Jeder Musiknote ist eine Standardfarbe zugeordnet, um sie auf jedem kompatiblen Instrument (wie Xylophonen oder farbigen Keyboards) schnell zu erkennen.</p>
+            
+            <div class="scale-grid">
+                <!-- C -->
+                <div class="scale-item">
+                    <div class="note-md bg-c-red text-white note-dot">C</div>
+                    <span class="scale-label hover-c">C</span>
+                </div>
+                <!-- D -->
+                <div class="scale-item">
+                    <div class="note-md bg-d-orange text-white note-dot">D</div>
+                    <span class="scale-label hover-d">D</span>
+                </div>
+                <!-- E -->
+                <div class="scale-item">
+                    <div class="note-md bg-e-yellow text-dark note-dot">E</div>
+                    <span class="scale-label hover-e">E</span>
+                </div>
+                <!-- F -->
+                <div class="scale-item">
+                    <div class="note-md bg-f-lgreen text-dark note-dot">F</div>
+                    <span class="scale-label hover-f">F</span>
+                </div>
+                <!-- G -->
+                <div class="scale-item">
+                    <div class="note-md bg-g-dgreen text-white note-dot">G</div>
+                    <span class="scale-label hover-g">G</span>
+                </div>
+                <!-- A -->
+                <div class="scale-item">
+                    <div class="note-md bg-a-blue text-white note-dot">A</div>
+                    <span class="scale-label hover-a">A</span>
+                </div>
+                <!-- H -->
+                <div class="scale-item">
+                    <div class="note-md bg-h-pink text-white note-dot">H</div>
+                    <span class="scale-label hover-h">H</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tarjeta: ¿Cómo funciona el ritmo? -->
+        <section class="card">
+            <div class="flex-layout">
+                <div class="col-half">
+                    <div class="rhythm-list">
+                        <!-- Figura de toque corto -->
+                        <div class="rhythm-card">
+                            <div class="circle-icon bg-a-blue note-dot"></div>
+                            <div>
+                                <h3 class="section-title" style="font-size: 1.25rem; margin-bottom: 0.25rem;">Kreise</h3>
+                                <p class="text-body" style="font-size: 0.875rem; margin-bottom: 0;">Stehen für kurze Noten (kurzes Anschlagen).</p>
+                            </div>
+                        </div>
+
+                        <!-- Figura de toque largo -->
+                        <div class="rhythm-card">
+                            <div class="pill-icon bg-d-orange pill-shape note-dot"></div>
+                            <div>
+                                <h3 class="section-title" style="font-size: 1.25rem; margin-bottom: 0.25rem;">Ovale (Pillen)</h3>
+                                <p class="text-body" style="font-size: 0.875rem; margin-bottom: 0;">Stehen für lange Noten (gedrückt halten).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-half">
+                    <h2 class="section-title">Der visuelle Rhythmus</h2>
+                    <p class="text-body">
+                        Die visuelle Länge der Figuren auf dem Bildschirm zeigt direkt an, wie lange du die Note klingen lassen sollst. Es ist eine direkte mentale Zuordnung: <strong>"Kurze Form = Kurzer Ton, Lange Form = Langer Ton"</strong>.
+                    </p>
+                    <p class="text-body">
+                        Die Partituren sind in gepunkteten "Kästchen" (Takten) gruppiert, die helfen, die Melodie strukturiert und leicht von links nach rechts und von oben nach unten zu verfolgen.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tarjeta: Beneficios y Público Objetivo -->
+        <section class="features-grid">
+            <div class="feature-box">
+                <div style="font-size: 2.25rem; margin-bottom: 1rem;">🧒</div>
+                <h3 class="section-title" style="font-size: 1.25rem; margin-bottom: 0.5rem;">Ideal für Kinder</h3>
+                <p class="text-body" style="font-size: 0.875rem;">Fördert die kognitive und motorische Entwicklung durch die frustfreie Verknüpfung von Farben, Formen und musikalischen Klängen.</p>
+            </div>
+            <div class="feature-box">
+                <div style="font-size: 2.25rem; margin-bottom: 1rem;">🎸</div>
+                <h3 class="section-title" style="font-size: 1.25rem; margin-bottom: 0.5rem;">100% Praxisnah</h3>
+                <p class="text-body" style="font-size: 0.875rem;">Sobald du eine Partitur öffnest, kannst du sofort spielen. Perfekt für Musikglocken, Boomwhackers oder Keyboards.</p>
+            </div>
+            <div class="feature-box">
+                <div style="font-size: 2.25rem; margin-bottom: 1rem;">🏫</div>
+                <h3 class="section-title" style="font-size: 1.25rem; margin-bottom: 0.5rem;">Unterstützung für Lehrkräfte</h3>
+                <p class="text-body" style="font-size: 0.875rem;">Ein hervorragendes kostenloses digitales Werkzeug für Musiklehrer in der frühkindlichen und schulischen Bildung.</p>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <div class="text-center" style="padding-top: 2rem;">
+            <a href="#" class="btn-cta">
+                🎵 Zur Lieder-Galerie
+            </a>
+            <p class="text-body" style="font-size: 0.875rem; margin-top: 1rem;">Simulation - Zurück zur Hauptseite, um die Partituren zu sehen.</p>
+        </div>
+
+    </main>
+
+    <footer class="footer">
+        <p>Projekt "Farbmelodien" - Interaktive Erklärung</p>
+    </footer>
+
+</body>
+</html>
