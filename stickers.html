@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Pegatinas para Piano</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #fdf6cc;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+        input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 100px;
+            font-size: 1rem;
+        }
+
+        button {
+            background-color: #2962FF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+            margin-top: 15px;
+        }
+
+        button:hover {
+            background-color: #1c44b2;
+        }
+
+        .preview-container {
+            width: 100%;
+            max-width: 1000px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h2 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            background-color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <div class="input-group">
+            <label for="width">Ancho (mm):</label>
+            <input type="number" id="width" value="20" min="10" step="1">
+        </div>
+        <div class="input-group">
+            <label for="height">Alto (mm):</label>
+            <input type="number" id="height" value="100" min="20" step="1">
+        </div>
+        <div class="input-group">
+            <label for="gap">Espacio blanco (mm):</label>
+            <input type="number" id="gap" value="4" min="0" step="1">
+        </div>
+        <button onclick="downloadImage()">Descargar para Imprimir</button>
+    </div>
+
+    <div class="preview-container">
+        <h2>Vista Previa</h2>
+        <canvas id="stickersCanvas"></canvas>
+    </div>
+
+    <script>
+        // --- COLORES ACTUALIZADOS PARA COINCIDIR CON NOTATION.HTML ---
+        const notes = [
+            { name: "C", color: "#ff3333" },
+            { name: "D", color: "#ff8c00" },
+            { name: "E", color: "#ffd700" },
+            { name: "F", color: "#a2ff33" },
+            { name: "G", color: "#00c853" },
+            { name: "A", color: "#1a1aff" },
+            { name: "H", color: "#ff33cc" },
+            { name: "C", color: "#ff3333", arrow: true } 
+        ];
+
+        const canvas = document.getElementById('stickersCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function drawStickers() {
+            // Obtener dimensiones en milímetros desde los controles
+            const widthMm = parseFloat(document.getElementById('width').value);
+            const heightMm = parseFloat(document.getElementById('height').value);
+            const gapMm = parseFloat(document.getElementById('gap').value);
+
+            // Conversión para impresión a 300 DPI (alta calidad)
+            const pxPerMm = 11.811;
+            
+            const keyW = widthMm * pxPerMm;
+            const keyH = heightMm * pxPerMm;
+            const gap = gapMm * pxPerMm;
+
+            // Ajustar tamaño del canvas contemplando el nuevo espacio
+            canvas.width = (keyW * notes.length) + (gap * (notes.length - 1));
+            canvas.height = keyH;
+
+            // Fondo blanco (este será el espacio que separa las teclas)
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Dibujar cada pegatina
+            notes.forEach((note, index) => {
+                const x = index * (keyW + gap);
+
+                // Fondo de la pegatina
+                ctx.fillStyle = note.color;
+                ctx.fillRect(x, 0, keyW, keyH);
+
+                ctx.textAlign = 'center';
+                ctx.shadowColor = "rgba(255,255,255,0.7)";
+                ctx.shadowBlur = 8;
+                ctx.shadowOffsetX = 4;
+                ctx.shadowOffsetY = 4;
+                ctx.fillStyle = '#000';
+
+                // Dibujar la letra
+                const fontSizeLetra = Math.min(keyW * 0.6, keyH * 0.2); 
+                ctx.font = `bold ${fontSizeLetra}px Arial`;
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(note.name, x + (keyW / 2), keyH - (keyH * 0.1));
+
+                // Dibujar la flecha si corresponde
+                if (note.arrow) {
+                    const fontSizeFlecha = keyW * 0.8;
+                    ctx.font = `bold ${fontSizeFlecha}px Arial`;
+                    ctx.textBaseline = 'middle';
+                    ctx.shadowColor = "transparent";
+                    ctx.fillText("↑", x + (keyW / 2), keyH / 2);
+                }
+
+                ctx.shadowColor = "transparent";
+            });
+        }
+
+        function downloadImage() {
+            drawStickers(); 
+            const dataUrl = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = 'pegatinas-piano.png';
+            link.href = dataUrl;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Listeners para redibujar si cambias el ancho, alto o el nuevo espacio blanco
+        document.getElementById('width').addEventListener('input', drawStickers);
+        document.getElementById('height').addEventListener('input', drawStickers);
+        document.getElementById('gap').addEventListener('input', drawStickers);
+
+        window.onload = drawStickers;
+    </script>
+</body>
+</html>
