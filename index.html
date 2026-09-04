@@ -45,6 +45,7 @@
         .bg-g-dgreen { background-color: #00c853; }
         .bg-a-blue { background-color: #1a1aff; }
         .bg-h-pink { background-color: #ff33ee; }
+        .bg-grey { background-color: #e5e7eb; } /* Silencios */
 
         /* === Elementos Visuales y Animaciones === */
         .note-dot {
@@ -69,6 +70,34 @@
             0% { transform: translateY(0px); }
             50% { transform: translateY(-10px); }
             100% { transform: translateY(0px); }
+        }
+
+        /* === Layout Cabecera === */
+        .header-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 2.5rem;
+        }
+
+        .header-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo-img {
+            width: 12rem;
+            max-width: 100%;
+            height: auto;
+            border-radius: 50%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+            flex-shrink: 0;
+        }
+        
+        .logo-img:hover {
+            transform: scale(1.05);
         }
 
         /* === Tipografía === */
@@ -108,18 +137,6 @@
         .header {
             padding-top: 4rem;
             padding-bottom: 3rem;
-        }
-
-        .header-dots {
-            display: inline-flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .dot-sm {
-            width: 1.5rem;
-            height: 1.5rem;
-            border-radius: 50%;
         }
 
         .main-content {
@@ -250,7 +267,7 @@
         .rhythm-list {
             display: flex;
             flex-direction: column;
-            gap: 2rem;
+            gap: 1.5rem;
             align-items: center;
             width: 100%;
         }
@@ -260,7 +277,7 @@
             align-items: center;
             gap: 1.5rem;
             width: 100%;
-            max-width: 24rem;
+            max-width: 26rem;
             background-color: #f9fafb;
             padding: 1rem;
             border-radius: 1rem;
@@ -273,6 +290,17 @@
             height: 4rem;
             border-radius: 50%;
             flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .circle-split {
+            width: 4rem;
+            height: 4rem;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background: linear-gradient(90deg, #00c853 50%, #1a1aff 50%); /* G-Green y A-Blue */
         }
 
         .pill-icon {
@@ -346,8 +374,14 @@
 
         /* === Responsive Media Queries === */
         @media (min-width: 768px) {
+            .header-content {
+                flex-direction: row;
+                text-align: left;
+                align-items: center;
+            }
+            .logo-img { width: 16rem; }
             .title { font-size: 3.75rem; }
-            .subtitle { font-size: 1.5rem; }
+            .subtitle { font-size: 1.5rem; margin: 0; }
             .card { padding: 3rem; }
             .flex-layout { flex-direction: row; }
             .col-half { width: 50%; }
@@ -359,16 +393,16 @@
 </head>
 <body>
 
-    <header class="container header text-center">
-        <div class="header-dots floating">
-            <div class="dot-sm bg-c-red note-dot"></div>
-            <div class="dot-sm bg-e-yellow note-dot"></div>
-            <div class="dot-sm bg-a-blue note-dot"></div>
+    <header class="container header">
+        <div class="header-content">
+            <img src="Farbmelodien.jpeg" alt="Farbmelodien Logo" class="logo-img floating">
+            <div class="header-text">
+                <h1 class="title">Farbmelodien</h1>
+                <p class="subtitle">
+                    Ein visuelles und intuitives Lernsystem, das das musikalische Lernen in ein Spiel aus Farben und Formen verwandelt.
+                </p>
+            </div>
         </div>
-        <h1 class="title">Farbmelodien</h1>
-        <p class="subtitle">
-            Ein visuelles und intuitives Lernsystem, das das musikalische Lernen in ein Spiel aus Farben und Formen verwandelt.
-        </p>
     </header>
 
     <main class="container main-content">
@@ -391,7 +425,8 @@
                     <div class="grid-notes">
                         <div class="note-lg bg-f-lgreen note-dot">F</div>
                         <div class="note-lg bg-g-dgreen note-dot">G</div>
-                        <div class="note-pill-lg bg-c-red pill-shape note-dot">C (Lang)</div>
+                        <!-- Modificado: Eliminado el (Lang) -->
+                        <div class="note-pill-lg bg-c-red pill-shape note-dot">C</div>
                     </div>
                 </div>
             </div>
@@ -400,7 +435,8 @@
         <!-- Tarjeta: La Escala de Colores -->
         <section class="card text-center">
             <h2 class="section-title">Die Farbskala</h2>
-            <p class="text-body">Jeder Musiknote ist eine Standardfarbe zugeordnet, um sie auf jedem kompatiblen Instrument (wie Xylophonen oder farbigen Keyboards) schnell zu erkennen.</p>
+            <!-- Añadida mención de la octava superior con flecha -->
+            <p class="text-body">Jeder Musiknote ist eine Standardfarbe zugeordnet, um sie auf jedem kompatiblen Instrument (wie Xylophonen oder farbigen Keyboards) schnell zu erkennen. <strong>Höhere Töne (eine Oktave höher) werden durch einen kleinen Pfeil nach oben (↑) markiert.</strong></p>
             
             <div class="scale-grid">
                 <!-- C -->
@@ -446,21 +482,39 @@
             <div class="flex-layout">
                 <div class="col-half">
                     <div class="rhythm-list">
-                        <!-- Figura de toque corto -->
+                        <!-- Viertelnote (Negra) -->
                         <div class="rhythm-card">
-                            <div class="circle-icon bg-a-blue note-dot"></div>
+                            <div class="circle-icon bg-c-red note-dot"></div>
                             <div>
-                                <h3 class="section-title" style="font-size: 1.25rem; margin-bottom: 0.25rem;">Kreise</h3>
-                                <p class="text-body" style="font-size: 0.875rem; margin-bottom: 0;">Stehen für kurze Noten (kurzes Anschlagen).</p>
+                                <h3 class="section-title" style="font-size: 1.25rem; margin-bottom: 0.25rem;">Einzelne Kreise</h3>
+                                <p class="text-body" style="font-size: 0.875rem; margin-bottom: 0;">Nehmen exakt einen Platz im Kästchen ein (Viertelnote).</p>
                             </div>
                         </div>
 
-                        <!-- Figura de toque largo -->
+                        <!-- Achtelnote (Corchea) -->
+                        <div class="rhythm-card">
+                            <div class="circle-split note-dot"></div>
+                            <div>
+                                <h3 class="section-title" style="font-size: 1.25rem; margin-bottom: 0.25rem;">Geteilte Kreise</h3>
+                                <p class="text-body" style="font-size: 0.875rem; margin-bottom: 0;">Zwei Töne, die sich einen Platz teilen (Achtelnoten).</p>
+                            </div>
+                        </div>
+
+                        <!-- Halbe/Ganze (Blanca/Redonda) -->
                         <div class="rhythm-card">
                             <div class="pill-icon bg-d-orange pill-shape note-dot"></div>
                             <div>
-                                <h3 class="section-title" style="font-size: 1.25rem; margin-bottom: 0.25rem;">Ovale (Pillen)</h3>
-                                <p class="text-body" style="font-size: 0.875rem; margin-bottom: 0;">Stehen für lange Noten (gedrückt halten).</p>
+                                <h3 class="section-title" style="font-size: 1.25rem; margin-bottom: 0.25rem;">Verbundene Kreise</h3>
+                                <p class="text-body" style="font-size: 0.875rem; margin-bottom: 0;">Nehmen 2 oder 4 Plätze ein (Halbe / Ganze Note).</p>
+                            </div>
+                        </div>
+
+                        <!-- Pause (Silencio) -->
+                        <div class="rhythm-card">
+                            <div class="circle-icon bg-grey note-dot"></div>
+                            <div>
+                                <h3 class="section-title" style="font-size: 1.25rem; margin-bottom: 0.25rem;">Graue Kreise</h3>
+                                <p class="text-body" style="font-size: 0.875rem; margin-bottom: 0;">Ein grauer Kreis bedeutet einen Platz Pause (Stille).</p>
                             </div>
                         </div>
                     </div>
@@ -468,10 +522,10 @@
                 <div class="col-half">
                     <h2 class="section-title">Der visuelle Rhythmus</h2>
                     <p class="text-body">
-                        Die visuelle Länge der Figuren auf dem Bildschirm zeigt direkt an, wie lange du die Note klingen lassen sollst. Es ist eine direkte mentale Zuordnung: <strong>"Kurze Form = Kurzer Ton, Lange Form = Langer Ton"</strong>.
+                        Das System übersetzt die Musiktheorie in sichtbare Bausteine: Die Grundbreite eines Platzes entspricht exakt einem Schlag. <strong>Verbundene Kreise nehmen einfach den Platz von mehreren Schlägen ein</strong>.
                     </p>
                     <p class="text-body">
-                        Die Partituren sind in gepunkteten "Kästchen" (Takten) gruppiert, die helfen, die Melodie strukturiert und leicht von links nach rechts und von oben nach unten zu verfolgen.
+                        Die Partituren sind in gepunkteten Kästchen (Takten) gruppiert. <strong>Jedes Kästchen beinhaltet exakt 4 Plätze (einen 4/4-Takt).</strong> Dies hilft, das Rhythmusgefühl räumlich und ganz natürlich zu verinnerlichen.
                     </p>
                 </div>
             </div>
@@ -479,18 +533,16 @@
 
         <!-- Tarjeta: Beneficios y Público Objetivo -->
         <section class="features-grid">
+            <!-- Modificado: Eliminados los emojis (ruido visual) -->
             <div class="feature-box">
-                <div style="font-size: 2.25rem; margin-bottom: 1rem;">🧒</div>
                 <h3 class="section-title" style="font-size: 1.25rem; margin-bottom: 0.5rem;">Ideal für Kinder</h3>
                 <p class="text-body" style="font-size: 0.875rem;">Fördert die kognitive und motorische Entwicklung durch die frustfreie Verknüpfung von Farben, Formen und musikalischen Klängen.</p>
             </div>
             <div class="feature-box">
-                <div style="font-size: 2.25rem; margin-bottom: 1rem;">🎸</div>
                 <h3 class="section-title" style="font-size: 1.25rem; margin-bottom: 0.5rem;">100% Praxisnah</h3>
                 <p class="text-body" style="font-size: 0.875rem;">Sobald du eine Partitur öffnest, kannst du sofort spielen. Perfekt für Musikglocken, Boomwhackers oder Keyboards.</p>
             </div>
             <div class="feature-box">
-                <div style="font-size: 2.25rem; margin-bottom: 1rem;">🏫</div>
                 <h3 class="section-title" style="font-size: 1.25rem; margin-bottom: 0.5rem;">Unterstützung für Lehrkräfte</h3>
                 <p class="text-body" style="font-size: 0.875rem;">Ein hervorragendes kostenloses digitales Werkzeug für Musiklehrer in der frühkindlichen und schulischen Bildung.</p>
             </div>
@@ -502,14 +554,12 @@
             <p class="text-body">Wähle eine der folgenden Anwendungen aus, um mit dem Lernen und Erstellen zu beginnen:</p>
             
             <div class="btn-group">
-    <a href="piano.html" class="btn-cta btn-orange">🎹 Piano Simulator</a>
-    <a href="notation.html" class="btn-cta btn-blue">🎵 Melodie-Ersteller</a>
-    <a href="stickers.html" class="btn-cta btn-purple">🖨️ Aufkleber-Generator</a>
-    
-    <!-- Aquí entramos primero a la carpeta y luego al archivo -->
-    <a href="gallery/gallery.html" class="btn-cta btn-green">🎼 Lieder-Galerie</a>
-    <a href="rhythm/rhythm.html" class="btn-cta btn-pink">🥁 Rhythmus-Spiel</a>
-</div>
+                <a href="piano.html" class="btn-cta btn-orange">🎹 Piano Simulator</a>
+                <a href="notation.html" class="btn-cta btn-blue">🎵 Melodie-Ersteller</a>
+                <a href="stickers.html" class="btn-cta btn-purple">🖨️ Aufkleber-Generator</a>
+                <a href="gallery/gallery.html" class="btn-cta btn-green">🎼 Lieder-Galerie</a>
+                <a href="rhythm/rhythm.html" class="btn-cta btn-pink">🥁 Rhythmus-Spiel</a>
+            </div>
         </section>
 
     </main>
