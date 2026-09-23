@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video-Tutorials - Farbmelodien</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            background: linear-gradient(120deg, #fdfbfb 0%, #ffecd2 100%);
+            color: #333;
+            margin: 0;
+            padding: 30px 20px;
+            text-align: center;
+            min-height: 100vh;
+        }
+
+        /* --- Header con Logo --- */
+        .header-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .logo-img {
+            width: 150px; 
+            height: auto;
+            border-radius: 50%;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+            transition: transform 0.3s ease;
+        }
+
+        .logo-img:hover {
+            transform: scale(1.05);
+        }
+
+        h1 {
+            color: #ff8c00;
+            font-size: 3rem;
+            margin-bottom: 5px;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.3rem;
+            margin-bottom: 40px;
+            font-weight: bold;
+        }
+
+        .gallery-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .video-card {
+            background-color: white;
+            border-radius: 20px;
+            padding: 25px 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.06);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-top: 6px solid #ff3344;
+        }
+
+        .video-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+
+        .thumbnail-container {
+            width: 100%;
+            height: 250px;
+            background-color: #f1f3f5;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+        }
+
+        .thumbnail-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.9;
+            transition: opacity 0.3s;
+        }
+        
+        .video-card:hover .thumbnail-container img {
+            opacity: 1;
+        }
+
+        .play-icon {
+            position: absolute;
+            font-size: 4rem;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            transition: transform 0.3s;
+        }
+
+        .video-card:hover .play-icon {
+            transform: scale(1.1);
+        }
+
+        .video-title {
+            font-size: 1.6rem;
+            color: #2c3e50;
+            margin: 15px 0 10px 0;
+            font-weight: bold;
+        }
+
+        .video-desc {
+            font-size: 1.05rem;
+            color: #7f8c8d;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        /* Modal für die Videowiedergabe */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.92);
+            backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background: transparent;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 600px; 
+            aspect-ratio: 9 / 16; 
+            position: relative;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            max-height: 95vh; 
+        }
+
+        .modal-content video {
+            width: 100%;
+            height: 100%;
+            max-height: 95vh; 
+            border-radius: 15px;
+            outline: none;
+            background-color: #000;
+            object-fit: contain; 
+        }
+
+        .btn-close {
+            position: absolute;
+            top: -50px;
+            right: 0;
+            background: #ff7675;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 10px 25px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: background 0.2s, transform 0.2s;
+            z-index: 1001; 
+        }
+
+        .btn-close:hover {
+            background: #d63031;
+            transform: translateY(-2px);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @media (max-width: 600px) {
+            .btn-close {
+                top: -45px;
+                right: 10px;
+                padding: 8px 20px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <img src="Farbmelodien.jpeg" alt="Farbmelodien Logo" class="logo-img">
+        <h1>Farbmelodien Video-Tutorials</h1>
+        <p class="subtitle">Lerne die Grundlagen unseres musikalischen Systems</p>
+    </div>
+
+    <div class="gallery-container">
+        
+        <div class="video-card" onclick="oeffneVideo('Intro.mp4')">
+            <div class="thumbnail-container">
+                <img src="video.jpeg" alt="Einführung in Farbmelodien">
+                <span class="play-icon">▶️</span>
+            </div>
+            <h2 class="video-title">Einführung in Farbmelodien</h2>
+            <p class="video-desc">Willkommen! In diesem Einführungsvideo erfährst du, wie unser System funktioniert und wie du sofort mit Farben und Formen musizieren kannst.</p>
+        </div>
+
+    </div>
+
+    <div id="videoModal" class="modal">
+        <div class="modal-content">
+            <button class="btn-close" onclick="schliesseVideo()">❌ Schließen</button>
+            <video id="videoPlayer" controls controlsList="nodownload">
+                Dein Browser unterstützt das Video-Tag leider nicht.
+            </video>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('videoModal');
+        const player = document.getElementById('videoPlayer');
+
+        function oeffneVideo(videoPfad) {
+            player.src = videoPfad; 
+            modal.style.display = 'flex';
+            
+            player.play().catch(e => {
+                console.log("Autoplay blockiert (normal in einigen Browsern):", e);
+            });
+        }
+
+        function schliesseVideo() {
+            modal.style.display = 'none';
+            player.pause();
+            player.removeAttribute('src'); 
+            player.load();
+        }
+
+        window.onclick = function(event) {
+            if (event.target === modal) {
+                schliesseVideo();
+            }
+        }
+    </script>
+
+</body>
+</html>
