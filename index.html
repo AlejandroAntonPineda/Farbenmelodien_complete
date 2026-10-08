@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zuordnungsspiel: Töne und Bilder</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <title>Entdecke Farbmelodien - Musik in Farben</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&display=swap');
+
+        /* === Estilos Base === */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -14,349 +15,606 @@
         }
 
         body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #fdfbfb 0%, #ffecd2 100%);
             min-height: 100vh;
+            color: #1f2937;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        ::selection {
+            background-color: #fed7aa;
+            color: #7c2d12;
+        }
+
+        /* === Utilidades Generales === */
+        .container {
+            max-width: 64rem;
+            margin: 0 auto;
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+        }
+
+        .text-center { text-align: center; }
+        
+        /* === Colores del Proyecto Original === */
+        .bg-c-red { background-color: #ff3344; }
+        .bg-d-orange { background-color: #ff8c00; }
+        .bg-e-yellow { background-color: #ffe000; }
+        .bg-f-lgreen { background-color: #a2ff33; }
+        .bg-g-dgreen { background-color: #00c853; }
+        .bg-a-blue { background-color: #1a1aff; }
+        .bg-h-pink { background-color: #ff33ee; }
+        .bg-grey { background-color: #e5e7eb; } /* Silencios */
+
+        /* === Elementos Visuales y Animaciones === */
+        .note-dot {
+            box-shadow: inset -4px -4px 8px rgba(0,0,0,0.15), 0 5px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .note-dot:hover {
+            transform: scale(1.15) translateY(-5px);
+        }
+
+        .pill-shape {
+            border-radius: 50px;
+            box-shadow: inset -4px -4px 8px rgba(0,0,0,0.15), 0 5px 8px rgba(0,0,0,0.1);
+        }
+
+        .floating {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* === Layout Cabecera === */
+        .header-content {
             display: flex;
             flex-direction: column;
             align-items: center;
-            color: #2c3e50;
-            padding: 20px;
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
             text-align: center;
+            gap: 2.5rem;
         }
 
-        p.instruction {
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-            text-align: center;
-            font-weight: 600;
-        }
-
-        .stats {
-            display: flex;
-            gap: 30px;
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 20px;
-            background: rgba(255, 255, 255, 0.4);
-            padding: 10px 30px;
-            border-radius: 50px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
-
-        .board-container {
+        .header-text {
             display: flex;
             flex-direction: column;
-            gap: 30px;
-            margin-bottom: 30px;
-            width: 100%;
-            max-width: 800px;
         }
 
-        .board-row {
+        .logo-img {
+            width: 12rem;
+            max-width: 100%;
+            height: auto;
+            border-radius: 50%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+            flex-shrink: 0;
+        }
+        
+        .logo-img:hover {
+            transform: scale(1.05);
+        }
+
+        /* === Tipografía === */
+        .title {
+            font-size: 3rem;
+            font-weight: 900;
+            color: #f97316;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.025em;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+        }
+        
+        .subtitle {
+            font-size: 1.25rem;
+            color: #4b5563;
+            font-weight: 600;
+            max-width: 42rem;
+            margin: 0 auto;
+            line-height: 1.625;
+        }
+
+        .section-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+
+        .text-body {
+            font-size: 1.125rem;
+            color: #4b5563;
+            margin-bottom: 1rem;
+            line-height: 1.625;
+        }
+
+        /* === Layout (Header y Secciones) === */
+        .header {
+            padding-top: 4rem;
+            padding-bottom: 3rem;
+        }
+
+        .main-content {
+            padding-bottom: 5rem;
             display: flex;
-            justify-content: center;
-            gap: 20px;
-            flex-wrap: wrap;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 20px;
+            flex-direction: column;
+            gap: 3rem;
         }
 
         .card {
-            width: 130px;
-            height: 130px;
-            background-color: white;
-            border-radius: 15px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-            transition: transform 0.2s, box-shadow 0.2s, border 0.2s;
-            border: 4px solid transparent;
-            overflow: hidden;
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.5);
             position: relative;
+            overflow: hidden;
         }
 
-        .card:hover:not(.matched) {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 20px rgba(0,0,0,0.2);
-        }
-
-        .card.selected {
-            border-color: #3498db;
-            transform: scale(1.05);
-            box-shadow: 0 0 15px #3498db;
-        }
-
-        .card.matched {
-            border-color: #2ecc71;
+        .blur-blob {
+            position: absolute;
+            right: -2.5rem;
+            top: -2.5rem;
+            width: 10rem;
+            height: 10rem;
+            background-color: #ffedd5;
+            border-radius: 50%;
+            filter: blur(24px);
             opacity: 0.6;
-            cursor: default;
-            transform: scale(0.95);
+            z-index: 0;
         }
 
-        .card img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        .card-content {
+            position: relative;
+            z-index: 10;
         }
 
-        .icon {
-            font-size: 60px;
-            color: #3498db;
-            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.2));
+        .flex-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+            align-items: center;
         }
 
-        .card.selected .icon {
-            animation: pulse 1s infinite;
+        .col-half { width: 100%; }
+
+        /* === Ejemplos de Notas (Layout) === */
+        .grid-notes {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            width: fit-content;
+            margin: 0 auto;
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.15); }
-            100% { transform: scale(1); }
-        }
-
-        .btn {
-            background-color: #3498db;
+        .note-lg {
+            width: 6rem;
+            height: 6rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: white;
-            border: none;
-            padding: 12px 30px;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .note-pill-lg {
+            grid-column: span 2;
+            width: 100%;
+            height: 6rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        /* === Escala de Colores === */
+        .scale-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .scale-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: default;
+        }
+
+        .note-md {
+            width: 4rem;
+            height: 4rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: 700;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            margin-bottom: 0.75rem;
+        }
+
+        .text-white { color: white; }
+        .text-dark { color: #1f2937; }
+
+        .scale-label {
+            font-weight: 700;
+            color: #374151;
+            transition: color 0.3s;
+        }
+
+        .scale-item:hover .hover-c { color: #ef4444; }
+        .scale-item:hover .hover-d { color: #f97316; }
+        .scale-item:hover .hover-e { color: #eab308; }
+        .scale-item:hover .hover-f { color: #4ade80; }
+        .scale-item:hover .hover-g { color: #16a34a; }
+        .scale-item:hover .hover-a { color: #3b82f6; }
+        .scale-item:hover .hover-h { color: #ec4899; }
+
+        /* === Ritmo (Tarjetas de Ejemplos) === */
+        .rhythm-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            align-items: center;
+            width: 100%;
+        }
+
+        .rhythm-card {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 26rem;
+            background-color: #f9fafb;
+            padding: 1rem;
+            border-radius: 1rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border: 1px solid #f3f4f6;
+        }
+
+        .circle-icon {
+            width: 4rem;
+            height: 4rem;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .circle-split {
+            width: 4rem;
+            height: 4rem;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background: linear-gradient(90deg, #00c853 50%, #1a1aff 50%); /* G-Green y A-Blue */
+        }
+
+        .pill-icon {
+            width: 8rem;
+            height: 4rem;
+            flex-shrink: 0;
+        }
+
+        /* === Características (Grid 3 columnas) === */
+        .features-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .feature-box {
+            background-color: rgba(255,255,255,0.8);
+            backdrop-filter: blur(8px);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .feature-box:hover {
+            transform: translateY(-0.5rem);
+        }
+
+        /* === Botones CTA (Llamada a la acción) === */
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.25rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+
+        .btn-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: white;
+            font-weight: 700;
             font-size: 1.1rem;
-            font-family: inherit;
-            font-weight: 600;
+            padding: 1rem 1.5rem;
             border-radius: 50px;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.2s;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            text-decoration: none;
+            transition: all 0.3s;
         }
 
-        .btn:hover {
-            background-color: #2980b9;
-            transform: translateY(-2px);
+        .btn-cta:hover {
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+            transform: scale(1.05);
         }
 
-        /* Responsive */
-        @media (max-width: 800px) {
-            .card { width: 110px; height: 110px; }
-            .board-row { gap: 15px; }
-            h1 { font-size: 2rem; }
+        /* Colores para los 5 botones */
+        .btn-orange { background: linear-gradient(to right, #fb923c, #ea580c); }
+        .btn-blue { background: linear-gradient(to right, #3b82f6, #2563eb); }
+        .btn-purple { background: linear-gradient(to right, #8b5cf6, #7c3aed); }
+        .btn-green { background: linear-gradient(to right, #10b981, #059669); }
+        .btn-pink { background: linear-gradient(to right, #ec4899, #be185d); }
+
+        .footer {
+            text-align: center;
+            padding-bottom: 2rem;
+            color: #6b7280;
+            font-weight: 600;
         }
-        @media (max-width: 600px) {
-            .card { width: 90px; height: 90px; }
-            .board-row { gap: 10px; }
+
+        /* === Responsive Media Queries === */
+        @media (min-width: 768px) {
+            .header-content {
+                flex-direction: row;
+                text-align: left;
+                align-items: center;
+            }
+            .logo-img { width: 16rem; }
+            .title { font-size: 3.75rem; }
+            .subtitle { font-size: 1.5rem; margin: 0; }
+            .card { padding: 3rem; }
+            .flex-layout { flex-direction: row; }
+            .col-half { width: 50%; }
+            .scale-grid { gap: 2rem; }
+            .note-md { width: 5rem; height: 5rem; }
+            .features-grid { grid-template-columns: repeat(3, 1fr); }
         }
     </style>
 </head>
 <body>
 
-    <h1>🧠 Zuordnungsspiel</h1>
-    <p class="instruction">Wähle ein Bild und den passenden Ton aus, um sie zu verbinden!</p>
-    
-    <div class="stats">
-        <div>Versuche: <span id="moves">0</span></div>
-        <div>Zeit: <span id="time">0</span>s</div>
-    </div>
-    
-    <div class="board-container">
-        <!-- Fila de imágenes -->
-        <div class="board-row" id="image-board"></div>
-        <!-- Fila de sonidos -->
-        <div class="board-row" id="audio-board"></div>
-    </div>
+    <header class="container header">
+        <div class="header-content">
+            <img src="Farbmelodien.jpeg" alt="Farbmelodien Logo" class="logo-img floating">
+            <div class="header-text">
+                <h1 class="title">Farbmelodien</h1>
+                <p class="subtitle">
+                    Ein visuelles und intuitives Lernsystem, das das musikalische Lernen in ein Spiel aus Farben und Formen verwandelt.
+                </p>
+            </div>
+        </div>
+    </header>
 
-    <button class="btn" onclick="restartGame()">Spiel Neu Starten</button>
-
-    <script>
-        const imagesData = [
-            { type: 'image', file: 'papel.jpeg', id: 'papel' },
-            { type: 'image', file: 'grifo.jpeg', id: 'grifo' },
-            { type: 'image', file: 'hojas.jpeg', id: 'hojas' },
-            { type: 'image', file: 'lego.jpeg', id: 'lego' },
-            { type: 'image', file: 'sila.jpeg', id: 'silla' }
-        ];
-
-        const audiosData = [
-            { type: 'audio', file: 'freesound_community-rasgando-periodico-89415.mp3', id: 'papel' },
-            { type: 'audio', file: 'freesound_community-agua-73988.mp3', id: 'grifo' },
-            { type: 'audio', file: 'sspsurvival-footsteps-on-dry-leaves-and-grass-332958.mp3', id: 'hojas' },
-            { type: 'audio', file: 'freesound_community-lego-bricks-2-67681.mp3', id: 'lego' },
-            { type: 'audio', file: 'freesound_community-wooden-chair-move-86869.mp3', id: 'silla' }
-        ];
-
-        let imageBoard = document.getElementById('image-board');
-        let audioBoard = document.getElementById('audio-board');
+    <main class="container main-content">
         
-        let firstCard = null;
-        let secondCard = null;
-        let lockBoard = false;
-        let currentAudio = null;
-        
-        let matches = 0;
-        let moves = 0;
-        let timer = 0;
-        let timerInterval = null;
-        let gameStarted = false;
+        <!-- Tarjeta: ¿Qué es? -->
+        <section class="card">
+            <div class="blur-blob"></div>
+            <div class="card-content flex-layout">
+                <div class="col-half">
+                    <h2 class="section-title">Worum geht es bei dem Projekt?</h2>
+                    <p class="text-body">
+                        <strong>Farbmelodien</strong> wurde entwickelt, um die Barrieren des traditionellen Notenlesens zu durchbrechen. 
+                        Es ist so konzipiert, dass Kinder, Anfänger und Pädagogen <strong>von der ersten Minute an</strong> musizieren können.
+                    </p>
+                    <p class="text-body">
+                        Anstelle der klassischen Notenlinien verwenden wir eine riesige grafische Partitur, in der jede Note eine bestimmte Farbe und jeder Rhythmus eine leicht verständliche Form hat.
+                    </p>
+                </div>
+                <div class="col-half text-center">
+                    <div class="grid-notes">
+                        <div class="note-lg bg-f-lgreen note-dot">F</div>
+                        <div class="note-lg bg-g-dgreen note-dot">G</div>
+                        <!-- Modificado: Eliminado el (Lang) -->
+                        <div class="note-pill-lg bg-c-red pill-shape note-dot">C</div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-        function shuffle(array) {
-            array.sort(() => Math.random() - 0.5);
-        }
-
-        function createCardElement(data) {
-            const cardElement = document.createElement('div');
-            cardElement.classList.add('card');
-            cardElement.dataset.id = data.id;
-            cardElement.dataset.type = data.type;
-            cardElement.dataset.file = data.file;
-
-            if (data.type === 'image') {
-                const imgElement = document.createElement('img');
-                imgElement.src = data.file;
-                cardElement.appendChild(imgElement);
-            } else if (data.type === 'audio') {
-                const iconElement = document.createElement('div');
-                iconElement.classList.add('icon');
-                iconElement.innerHTML = '🔊'; 
-                cardElement.appendChild(iconElement);
-            }
-
-            cardElement.addEventListener('click', selectCard);
-            return cardElement;
-        }
-
-        function initGame() {
-            imageBoard.innerHTML = '';
-            audioBoard.innerHTML = '';
+        <!-- Tarjeta: La Escala de Colores -->
+        <section class="card text-center">
+            <h2 class="section-title">Die Farbskala</h2>
+            <!-- Añadida mención de la octava superior con flecha -->
+            <p class="text-body">Jeder Musiknote ist eine Standardfarbe zugeordnet, um sie auf jedem kompatiblen Instrument (wie Xylophonen oder farbigen Keyboards) schnell zu erkennen. <strong>Höhere Töne (eine Oktave höher) werden durch einen kleinen Pfeil nach oben (↑) markiert.</strong></p>
             
-            shuffle(imagesData);
-            shuffle(audiosData);
+            <div class="scale-grid">
+                <!-- C -->
+                <div class="scale-item">
+                    <div class="note-md bg-c-red text-white note-dot">C</div>
+                    <span class="scale-label hover-c">C</span>
+                </div>
+                <!-- D -->
+                <div class="scale-item">
+                    <div class="note-md bg-d-orange text-white note-dot">D</div>
+                    <span class="scale-label hover-d">D</span>
+                </div>
+                <!-- E -->
+                <div class="scale-item">
+                    <div class="note-md bg-e-yellow text-dark note-dot">E</div>
+                    <span class="scale-label hover-e">E</span>
+                </div>
+                <!-- F -->
+                <div class="scale-item">
+                    <div class="note-md bg-f-lgreen text-dark note-dot">F</div>
+                    <span class="scale-label hover-f">F</span>
+                </div>
+                <!-- G -->
+                <div class="scale-item">
+                    <div class="note-md bg-g-dgreen text-white note-dot">G</div>
+                    <span class="scale-label hover-g">G</span>
+                </div>
+                <!-- A -->
+                <div class="scale-item">
+                    <div class="note-md bg-a-blue text-white note-dot">A</div>
+                    <span class="scale-label hover-a">A</span>
+                </div>
+                <!-- H -->
+                <div class="scale-item">
+                    <div class="note-md bg-h-pink text-white note-dot">H</div>
+                    <span class="scale-label hover-h">H</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tarjeta: ¿Cómo funciona el ritmo? -->
+        <section class="card">
+            <div class="flex-layout">
+                <div class="col-half">
+                    <div class="rhythm-list">
+                        <!-- Viertelnote (Negra) -->
+                        <div class="rhythm-card">
+                            <div class="circle-icon bg-c-red note-dot"></div>
+                            <div>
+                                <h3 class="section-title" style="font-size: 1.25rem; margin-bottom: 0.25rem;">Einzelne Kreise</h3>
+                                <p class="text-body" style="font-size: 0.875rem; margin-bottom: 0;">Nehmen exakt einen Platz im Kästchen ein (Viertelnote).</p>
+                            </div>
+                        </div>
+
+                        <!-- Achtelnote (Corchea) -->
+                        <div class="rhythm-card">
+                            <div class="circle-split note-dot"></div>
+                            <div>
+                                <h3 class="section-title" style="font-size: 1.25rem; margin-bottom: 0.25rem;">Geteilte Kreise</h3>
+                                <p class="text-body" style="font-size: 0.875rem; margin-bottom: 0;">Zwei Töne, die sich einen Platz teilen (Achtelnoten).</p>
+                            </div>
+                        </div>
+
+                        <!-- Halbe/Ganze (Blanca/Redonda) -->
+                        <div class="rhythm-card">
+                            <div class="pill-icon bg-d-orange pill-shape note-dot"></div>
+                            <div>
+                                <h3 class="section-title" style="font-size: 1.25rem; margin-bottom: 0.25rem;">Verbundene Kreise</h3>
+                                <p class="text-body" style="font-size: 0.875rem; margin-bottom: 0;">Nehmen 2 oder 4 Plätze ein (Halbe / Ganze Note).</p>
+                            </div>
+                        </div>
+
+                        <!-- Pause (Silencio) -->
+                        <div class="rhythm-card">
+                            <div class="circle-icon bg-grey note-dot"></div>
+                            <div>
+                                <h3 class="section-title" style="font-size: 1.25rem; margin-bottom: 0.25rem;">Graue Kreise</h3>
+                                <p class="text-body" style="font-size: 0.875rem; margin-bottom: 0;">Ein grauer Kreis bedeutet einen Platz Pause (Stille).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-half">
+                    <h2 class="section-title">Der visuelle Rhythmus</h2>
+                    <p class="text-body">
+                        Das System übersetzt die Musiktheorie in sichtbare Bausteine: Die Grundbreite eines Platzes entspricht exakt einem Schlag. <strong>Verbundene Kreise nehmen einfach den Platz von mehreren Schlägen ein</strong>.
+                    </p>
+                    <p class="text-body">
+                        Die Partituren sind in gepunkteten Kästchen (Takten) gruppiert. <strong>Jedes Kästchen beinhaltet exakt 4 Plätze (einen 4/4-Takt).</strong> Dies hilft, das Rhythmusgefühl räumlich und ganz natürlich zu verinnerlichen.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tarjeta: Beneficios y Público Objetivo -->
+        <section class="features-grid">
+            <!-- Modificado: Eliminados los emojis (ruido visual) -->
+            <div class="feature-box">
+                <h3 class="section-title" style="font-size: 1.25rem; margin-bottom: 0.5rem;">Ideal für Kinder</h3>
+                <p class="text-body" style="font-size: 0.875rem;">Fördert die kognitive und motorische Entwicklung durch die frustfreie Verknüpfung von Farben, Formen und musikalischen Klängen.</p>
+            </div>
+            <div class="feature-box">
+                <h3 class="section-title" style="font-size: 1.25rem; margin-bottom: 0.5rem;">100% Praxisnah</h3>
+                <p class="text-body" style="font-size: 0.875rem;">Sobald du eine Partitur öffnest, kannst du sofort spielen. Perfekt für Musikglocken, Boomwhackers oder Keyboards.</p>
+            </div>
+            <div class="feature-box">
+                <h3 class="section-title" style="font-size: 1.25rem; margin-bottom: 0.5rem;">Unterstützung für Lehrkräfte</h3>
+                <p class="text-body" style="font-size: 0.875rem;">Ein hervorragendes kostenloses digitales Werkzeug für Musiklehrer in der frühkindlichen und schulischen Bildung.</p>
+            </div>
+        </section>
+
+<!-- SECCIÓN DE ENLACES A TODAS LAS HERRAMIENTAS -->
+        <section class="card" style="border: 2px dashed rgba(249, 115, 22, 0.4);">
+            <h2 class="section-title text-center">Die Schritte</h2>
             
-            imagesData.forEach(data => imageBoard.appendChild(createCardElement(data)));
-            audiosData.forEach(data => audioBoard.appendChild(createCardElement(data)));
-        }
+           <!-- Schritt 1 -->
+            <div class="flex-layout" style="margin-top: 2rem; align-items: center;">
+                <div class="col-half">
+                    <h3 style="font-size: 1.5rem; color: #7c3aed; margin-bottom: 1rem;">Schritt 1: Vorbereitung des Instruments</h3>
+                    <p class="text-body">
+                        Das erste pädagogische Ziel ist es, die Farbskala mit dem <a href="stickers.html" style="color: #7c3aed; font-weight: bold; text-decoration: none;">Aufkleber-Generator</a> in die reale Welt zu übertragen. Dieses Werkzeug ermöglicht es, Breite, Höhe und weißen Abstand in Millimetern einzustellen, um eine druckbare Aufklebervorlage zu erstellen, die perfekt an die Tasten deines Klaviers oder Xylophons angepasst ist.
+                    </p>
+                    <p class="text-body"><a href="Sticker-Position.png" target="_blank" style="color: red; font-weight: bold; text-decoration: underline;">Achtung</a></p>
+                    <p class="text-body">
+                        Durch das Anbringen dieser Farben — wie das C in Rot, G in Dunkelgrün oder das hohe C mit einem Pfeil nach oben — beseitigen wir die Barrieren der traditionellen Notenschrift und schaffen eine sofortige visuell-motorische Verbindung für den Lernenden.
+                    </p>
+                </div>
+                <div class="col-half text-center">
+                    <img src="Sticker.jpeg" alt="Tastatur mit Farbmelodien Aufklebern" style="max-width: 100%; border-radius: 1rem; box-shadow: 0 10px 25px rgba(0,0,0,0.15);">
+                </div>
+            </div>
+            <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 3rem 0;">
 
-        function startTimer() {
-            if (!gameStarted) {
-                gameStarted = true;
-                timerInterval = setInterval(() => {
-                    timer++;
-                    document.getElementById('time').innerText = timer;
-                }, 1000);
-            }
-        }
+            <!-- Schritt 2 und 3 -->
+            <div class="flex-layout" style="align-items: flex-start;">
+                <div class="col-half">
+                    <h3 style="font-size: 1.5rem; color: #10b981; margin-bottom: 1rem;">Schritt 2: Praxis und Festigung</h3>
+                    <p class="text-body">
+                        Sobald die Umgebung vorbereitet ist, wechseln wir zur <a href="gallery/gallery.html" style="color: #10b981; font-weight: bold; text-decoration: none;">Lieder-Galerie</a>. In dieser Phase nutzt der Schüler grafische Partituren bekannter Lieder, bei denen jede Note ein farbiger Kreis ist und jedes gepunktete Kästchen einen 4/4-Takt darstellt.
+                    </p>
+                    <p class="text-body">
+                        Diese Praxis garantiert aktives Musizieren ab der ersten Minute, fördert die Motivation, reduziert Frustration und festigt das chromatische Lesen.
+                    </p>
+                    <!-- Nuevo botón para el tutorial añadido al Paso 1 -->
+                    <div style="margin-top: 1.5rem;">
+                        <a href="tutorials/tutorial.html" class="btn-cta btn-purple">▶️ Video-Tutorial ansehen</a>
+                    </div>
+                </div>
+                <div class="col-half">
+                    <h3 style="font-size: 1.5rem; color: #3b82f6; margin-bottom: 1rem;">Schritt 3: Kreativer Ausdruck</h3>
+                    <p class="text-body">
+                        Der Höhepunkt des Lernprozesses ist das Komponieren mit dem <a href="notation/notation.html" style="color: #3b82f6; font-weight: bold; text-decoration: none;">Melodie-Ersteller</a>.
+                    </p>
+                    <ul class="text-body" style="padding-left: 1.5rem; margin-top: 0.5rem; list-style-type: disc;">
+                        <li style="margin-bottom: 0.5rem;">Die Kinder wählen die Taktart (3/4 oder 4/4), die Notenlänge und den Klang (Klavier oder Glocke).</li>
+                        <li style="margin-bottom: 0.5rem;">Durch Klicken auf die grauen Kreise der Leinwand malen sie ihre eigenen chromatischen Sequenzen und können den Kreis sogar visuell teilen, um Achtelnoten zu erstellen.</li>
+                        <li>Schließlich können sie ihr Werk abspielen, in einem lokalen Ordner speichern oder als Bild herunterladen, um es zu teilen.</li>
+                    </ul>
+                </div>
+            </div>
 
-        function playAudio(file) {
-            if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
-            currentAudio = new Audio(file);
-            currentAudio.play();
-        }
+            <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 3rem 0;">
 
-        function selectCard() {
-            if (lockBoard) return;
-            if (this.classList.contains('matched')) return;
-            if (this === firstCard) return; 
+            <!-- Extras -->
+            <div class="text-center">
+                <h3 style="font-size: 1.25rem; color: #4b5563; margin-bottom: 1.5rem;">Extras</h3>
+                <div class="btn-group">
+                    <a href="piano.html" class="btn-cta btn-orange">🎹 Piano Simulator</a>
+                    <a href="rhythm/rhythm.html" class="btn-cta btn-pink">🥁 Rhythmus-Spiel</a>
+                </div>
+            </div>
+        </section>
 
-            startTimer();
+    </main>
 
-            // Si el usuario elige otra carta del mismo tipo antes de completar la pareja, cambiamos la selección
-            if (firstCard && firstCard.dataset.type === this.dataset.type) {
-                firstCard.classList.remove('selected');
-                firstCard = this;
-                this.classList.add('selected');
-                if (this.dataset.type === 'audio') playAudio(this.dataset.file);
-                return;
-            }
+    <footer class="footer">
+        <p>Projekt "Farbmelodien" - Startseite</p>
+    </footer>
 
-            this.classList.add('selected');
-            if (this.dataset.type === 'audio') playAudio(this.dataset.file);
-
-            if (!firstCard) {
-                firstCard = this;
-                return;
-            }
-
-            secondCard = this;
-            moves++;
-            document.getElementById('moves').innerText = moves;
-            checkForMatch();
-        }
-
-        function checkForMatch() {
-            let isMatch = firstCard.dataset.id === secondCard.dataset.id;
-
-            if (isMatch) {
-                disableCards();
-            } else {
-                unselectCards();
-            }
-        }
-
-        function disableCards() {
-            firstCard.classList.remove('selected');
-            secondCard.classList.remove('selected');
-            
-            firstCard.classList.add('matched');
-            secondCard.classList.add('matched');
-            
-            firstCard.removeEventListener('click', selectCard);
-            secondCard.removeEventListener('click', selectCard);
-            
-            matches++;
-            if (matches === imagesData.length) {
-                winGame();
-            }
-            
-            resetBoard();
-        }
-
-        function unselectCards() {
-            lockBoard = true;
-            setTimeout(() => {
-                firstCard.classList.remove('selected');
-                secondCard.classList.remove('selected');
-                if(currentAudio) { currentAudio.pause(); } 
-                resetBoard();
-            }, 1000); 
-        }
-
-        function resetBoard() {
-            [firstCard, secondCard, lockBoard] = [null, null, false];
-        }
-
-        function winGame() {
-            clearInterval(timerInterval);
-            setTimeout(() => {
-                confetti({
-                    particleCount: 200,
-                    spread: 90,
-                    origin: { y: 0.6 }
-                });
-                alert(`Perfekt! Du hast alle Paare in ${moves} Versuchen und ${timer} Sekunden gefunden!`);
-            }, 300);
-        }
-
-        function restartGame() {
-            matches = 0;
-            moves = 0;
-            timer = 0;
-            gameStarted = false;
-            document.getElementById('moves').innerText = moves;
-            document.getElementById('time').innerText = timer;
-            clearInterval(timerInterval);
-            if(currentAudio) { currentAudio.pause(); }
-            
-            initGame();
-        }
-
-        initGame();
-    </script>
 </body>
 </html>
