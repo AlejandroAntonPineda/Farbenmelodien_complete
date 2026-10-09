@@ -301,6 +301,13 @@
         .delete-btn:hover { background-color: #fee2e2; border-color: #fca5a5; }
         .empty-message { text-align: center; color: var(--secondary-text); font-style: italic; margin-top: 20px; }
 
+        /* Círculo seleccionado por el teclado */
+        .focused-beat {
+            border: 4px solid var(--primary-text) !important;
+            box-shadow: 0 0 12px rgba(51, 65, 85, 0.4) !important;
+            transform: scale(1.15) !important;
+            z-index: 10;
+        }
     </style>
 </head>
 <body>
@@ -339,13 +346,19 @@
         <div class="card instructions">
             <h3>📖 Wie wird gespielt?</h3>
             <ol>
-                <li><strong>Wähle eine Farbe</strong> und ein <strong>Instrument</strong> im Menü oben.</li>
-                <li><strong>Wähle die Notenlänge</strong> (Achtel, Viertel, Halbe oder Ganze).</li>
-                <li><strong>Tippe auf die grauen Kreise</strong>, um deine Noten zu malen. <em>(Tipp: Klicke bei Achtelnoten auf die linke oder rechte Seite, um Farben zu mischen!)</em></li>
+                <li><strong>Mit der Maus:</strong> Wähle Farben und Notenlängen oben im Menü und tippe auf die grauen Kreise, um zu malen. <em>(Tipp: Klicke bei Achtelnoten auf die linke oder rechte Seite, um Farben zu mischen!)</em></li>
+                <li><strong>Mit der Tastatur (Schnellmodus):</strong>
+                    <ul style="margin-top: 5px; margin-bottom: 5px;">
+                        <li><strong>Pfeiltasten (⬅️ ➡️ ⬆️ ⬇️):</strong> Bewege den schwarzen Rahmen durch die Noten.</li>
+                        <li><strong>Zahlen 1 bis 8:</strong> Male direkt eine Note (Farbe 1 bis 8). Das Feld springt danach automatisch weiter!</li>
+                        <li><strong>Punkt (.) & Komma (,):</strong> Punkt = Viertelnote (♩), Komma = Halbenote (d).</li>
+                        <li><strong>Rücktaste (Backspace):</strong> Löscht eine Note und geht einen Schritt zurück.</li>
+                    </ul>
+                </li>
                 <li>Klicke auf den <strong>▶️ Play</strong> Button, um dein Meisterwerk zu hören.</li>
             </ol>
         </div>
-
+        
         <div class="grid-container" id="capture-area">
             <div class="grid" id="grid"></div>
         </div>
@@ -1084,7 +1097,130 @@
             }
         }
 
+
+        // ==========================================
+        // 8. CONTROLES DE TECLADO (Navegación y Escritura)
+        // ==========================================
+        let currentFocusIndex = 0; // Guarda en qué círculo (beat) estamos
+
+        function updateFocus() {
+            const beats = document.querySelectorAll('.beat');
+            if (beats.length === 0) return;
+            
+            // Quitamos el borde negro de todos los círculos
+            beats.forEach(b => b.classList.remove('focused-beat'));
+            
+            // Aseguramos que no nos salimos de los límites
+            if (currentFocusIndex < 0) currentFocusIndex = 0;
+            if (currentFocusIndex >= beats.length) currentFocusIndex = beats.length - 1;
+            
+            // Le ponemos el borde grueso al círculo actual
+            beats[currentFocusIndex].classList.add('focused-beat');
+            
+            // Si nos salimos de la pantalla, hace scroll automático
+            beats[currentFocusIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Si el usuario hace clic con el ratón, movemos el "foco" a donde hizo clic
+        document.addEventListener('click', function(e) {
+            const beatEl = e.target.closest('.beat');
+            if (beatEl) {
+                const beats = Array.from(document.querySelectorAll('.beat'));
+                const index = beats.indexOf(beatEl);
+                if (index !== -1) {
+                    currentFocusIndex = index;
+                    updateFocus();
+                }
+            }
+        });
+
+        // Inicializar el foco cuando cargue la página
+        setTimeout(updateFocus, 100); 
+
+        document.addEventListener('keydown', function(event) {
+            const beats = document.querySelectorAll('.beat');
+            if (beats.length === 0) return;
+
+            // --- 1. MOVERSE POR LA CUADRÍCULA CON LAS FLECHAS ---
+            if (event.key === 'ArrowRight') {
+                currentFocusIndex = (currentFocusIndex + 1) % beats.length;
+                updateFocus();
+                event.preventDefault(); // Evita que la página web baje accidentalmente
+            } 
+            else if (event.key === 'ArrowLeft') {
+                currentFocusIndex = (currentFocusIndex - 1 + beats.length) % beats.length;
+                updateFocus();
+                event.preventDefault();
+            }
+            else if (event.key === 'ArrowDown') {
+                // Mover a la fila de abajo
+                currentFocusIndex = Math.min(currentFocusIndex + beatsPerMeasure, beats.length - 1);
+                updateFocus();
+                event.preventDefault();
+            }
+            else if (event.key === 'ArrowUp') {
+                // Mover a la fila de arriba
+                currentFocusIndex = Math.max(currentFocusIndex - beatsPerMeasure, 0);
+                updateFocus();
+                event.preventDefault();
+            }
+
+            // --- 2. ESCRIBIR CON LOS NÚMEROS 1 AL 7 ---
+            if (event.key >= '1' && event.key <= '8') {
+                const noteIndex = parseInt(event.key) - 1;
+                const noteBtns = document.querySelectorAll('.note-btn');
+                
+                if (noteBtns[noteIndex]) {
+                    // Seleccionar el color en la paleta de arriba
+                    selectNote(notes[noteIndex], noteBtns[noteIndex]);
+                    
+                    // Pintar la nota en el círculo seleccionado en la cuadrícula
+                    const focusedBeat = beats[currentFocusIndex];
+                    if (focusedBeat) {
+                        toggleBeat(focusedBeat, null);
+                        
+                        // ¡Magia! Después de escribir, el cursor avanza automáticamente
+                        // al siguiente espacio vacío (calcula si es negra o blanca).
+                        const spacesToAdvance = selectedDuration < 1 ? 1 : selectedDuration;
+                        currentFocusIndex = Math.min(currentFocusIndex + spacesToAdvance, beats.length - 1);
+                        updateFocus();
+                    }
+                }
+            }
+
+           // --- 3. ATAJOS PARA DURACIÓN DE LA NOTA ---
+            if (event.key === '.') {
+                setDuration(1); // Punto = Negra (♩)
+            }
+            if (event.key === ',') {
+                setDuration(2); // Coma = Blanca (d)
+            }
+            
+            // --- 4. BORRAR LA NOTA ACTUAL ---
+            if (event.key === 'Backspace' || event.key === 'Delete') {
+                const focusedBeat = beats[currentFocusIndex];
+                if (focusedBeat) {
+                    // Calculamos cuántos espacios ocupaba la nota actual para borrarlos todos
+                    const currentDur = parseFloat(focusedBeat.dataset.duration) || 1;
+                    const spacesToClear = currentDur < 1 ? 1 : currentDur;
+                    
+                    // Borramos la nota en la que estamos y las ligadas (si era blanca o redonda)
+                    for(let i = 0; i < spacesToClear; i++) {
+                        if(currentFocusIndex + i < beats.length) {
+                             resetBeatVisuals(beats[currentFocusIndex + i]);
+                        }
+                    }
+                    // Si se usó Retroceso, además de borrar, movemos el cursor un paso atrás (como en Word)
+                    if (event.key === 'Backspace' && currentFocusIndex > 0) {
+                        currentFocusIndex = currentFocusIndex - 1;
+                        updateFocus();
+                    }
+                }
+            }
+        });
+
         window.onload = init;
+        
     </script>
 </body>
 </html>
