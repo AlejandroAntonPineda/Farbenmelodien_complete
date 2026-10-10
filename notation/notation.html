@@ -926,6 +926,10 @@
             const controls = cloneContainer.querySelectorAll('.measure-controls');
             controls.forEach(ctrl => ctrl.style.display = 'none');
 
+            // Eliminar el borde negro del círculo seleccionado en la imagen final
+            const focusedBeats = cloneContainer.querySelectorAll('.focused-beat');
+            focusedBeats.forEach(beat => beat.classList.remove('focused-beat'));
+
             document.body.appendChild(cloneContainer);
             
             html2canvas(cloneContainer, {
