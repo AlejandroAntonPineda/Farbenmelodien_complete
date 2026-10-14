@@ -129,7 +129,7 @@
             line-height: 1.5;
         }
 
-        /* --- Mejoras aplicadas al Modal para Móviles --- */
+        /* --- Estilos del Modal (Mantenidos por si falla la pantalla completa) --- */
         .modal {
             display: none;
             position: fixed;
@@ -151,18 +151,17 @@
             background: transparent;
             border-radius: 15px;
             width: 100%;
-            max-width: 800px; /* Aumentado un poco para que se vea mejor en pantallas grandes */
+            max-width: 800px; 
             position: relative;
             display: flex;
             justify-content: center;
             align-items: center;
-            /* Se ha eliminado aspect-ratio: 9/16 para que se adapte al tamaño real del video */
         }
 
         .modal-content video {
             width: 100%;
-            height: auto; /* Permite que la altura fluya con la proporción original */
-            max-height: 85vh; /* Evita que el video sea más alto que la pantalla en móviles */
+            height: auto; 
+            max-height: 85vh; 
             border-radius: 15px;
             outline: none;
             background-color: #000;
@@ -201,7 +200,7 @@
             .btn-close {
                 top: -50px;
                 right: 50%;
-                transform: translateX(50%); /* Centra el botón de cerrar en móviles para mejor acceso */
+                transform: translateX(50%); 
                 padding: 10px 25px;
                 font-size: 1rem;
             }
@@ -212,7 +211,7 @@
                 border-radius: 8px;
             }
             .modal {
-                padding: 10px; /* Menos relleno lateral en móviles */
+                padding: 10px; 
             }
         }
     </style>
@@ -255,9 +254,19 @@
             player.src = videoPfad; 
             modal.style.display = 'flex';
             
+            // Intenta reproducir el video
             player.play().catch(e => {
                 console.log("Autoplay blockiert (normal in einigen Browsern):", e);
             });
+
+            // Solicitar Pantalla Completa
+            if (player.requestFullscreen) {
+                player.requestFullscreen();
+            } else if (player.webkitRequestFullscreen) { /* Safari */
+                player.webkitRequestFullscreen();
+            } else if (player.msRequestFullscreen) { /* IE11 */
+                player.msRequestFullscreen();
+            }
         }
 
         function schliesseVideo() {
@@ -265,6 +274,29 @@
             player.pause();
             player.removeAttribute('src'); 
             player.load();
+            
+            // Salir de pantalla completa si aún está activa
+            if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) { /* Safari */
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { /* IE11 */
+                    document.msExitFullscreen();
+                }
+            }
+        }
+
+        // Si el usuario sale de pantalla completa usando los controles nativos (ej. botón 'Escape' o botón nativo del móvil), pausamos el video.
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('msfullscreenchange', handleFullscreenChange);
+
+        function handleFullscreenChange() {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+                // Si ya no estamos en pantalla completa, cerramos el modal
+                schliesseVideo();
+            }
         }
 
         window.onclick = function(event) {
