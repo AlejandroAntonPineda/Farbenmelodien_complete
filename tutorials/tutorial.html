@@ -15,25 +15,13 @@
             min-height: 100vh;
         }
 
-        /* --- Header con Logo --- */
+        /* --- Header sin Logo --- */
         .header-container {
             display: flex;
             flex-direction: column;
             align-items: center;
             margin-bottom: 30px;
-        }
-
-        .logo-img {
-            width: 150px; 
-            height: auto;
-            border-radius: 50%;
-            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-            margin-bottom: 15px;
-            transition: transform 0.3s ease;
-        }
-
-        .logo-img:hover {
-            transform: scale(1.05);
+            padding-top: 20px;
         }
 
         h1 {
@@ -80,7 +68,7 @@
         .thumbnail-container {
             width: 100%;
             height: 250px;
-            background-color: #f1f3f5;
+            background: linear-gradient(135deg, #f1f3f5, #e2e6ea);
             border-radius: 15px;
             display: flex;
             align-items: center;
@@ -91,28 +79,16 @@
             box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
         }
 
-        .thumbnail-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            opacity: 0.9;
-            transition: opacity 0.3s;
-        }
-        
-        .video-card:hover .thumbnail-container img {
-            opacity: 1;
-        }
-
         .play-icon {
-            position: absolute;
             font-size: 4rem;
-            color: rgba(255, 255, 255, 0.9);
-            text-shadow: 0 4px 15px rgba(0,0,0,0.4);
-            transition: transform 0.3s;
+            color: rgba(255, 51, 68, 0.8);
+            text-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: transform 0.3s, color 0.3s;
         }
 
         .video-card:hover .play-icon {
-            transform: scale(1.1);
+            transform: scale(1.15);
+            color: rgba(255, 51, 68, 1);
         }
 
         .video-title {
@@ -129,7 +105,7 @@
             line-height: 1.5;
         }
 
-        /* --- Estilos del Modal (Mantenidos por si falla la pantalla completa) --- */
+        /* --- Estilos del Modal --- */
         .modal {
             display: none;
             position: fixed;
@@ -151,7 +127,7 @@
             background: transparent;
             border-radius: 15px;
             width: 100%;
-            max-width: 800px; 
+            max-width: 900px; 
             position: relative;
             display: flex;
             justify-content: center;
@@ -165,30 +141,36 @@
             border-radius: 15px;
             outline: none;
             background-color: #000;
-            object-fit: contain; 
             box-shadow: 0 25px 50px rgba(0,0,0,0.5);
         }
 
+        /* --- Botón de cierre elegante --- */
         .btn-close {
-            position: absolute;
-            top: -45px;
-            right: 0;
-            background: #ff7675;
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.1);
             color: white;
-            border: none;
-            border-radius: 50px;
-            padding: 8px 20px;
-            font-size: 1.1rem;
-            font-weight: bold;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            transition: background 0.2s, transform 0.2s;
-            z-index: 1001; 
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+            z-index: 1001;
+            padding: 0;
+            line-height: 1;
         }
 
         .btn-close:hover {
-            background: #d63031;
-            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.3);
+            border-color: white;
+            transform: scale(1.1) rotate(90deg);
         }
 
         @keyframes fadeIn {
@@ -198,14 +180,11 @@
 
         @media (max-width: 600px) {
             .btn-close {
-                top: -50px;
-                right: 50%;
-                transform: translateX(50%); 
-                padding: 10px 25px;
-                font-size: 1rem;
-            }
-            .btn-close:hover {
-                transform: translateX(50%) translateY(-2px);
+                top: 20px;
+                right: 20px;
+                width: 40px;
+                height: 40px;
+                font-size: 1.4rem;
             }
             .modal-content video {
                 border-radius: 8px;
@@ -219,7 +198,6 @@
 <body>
 
     <div class="header-container">
-        <img src="Farbmelodien.jpeg" alt="Farbmelodien Logo" class="logo-img">
         <h1>Farbmelodien Video-Tutorials</h1>
         <p class="subtitle">Lerne die Grundlagen unseres musikalischen Systems</p>
     </div>
@@ -228,7 +206,6 @@
         
         <div class="video-card" onclick="oeffneVideo('Intro.mp4')">
             <div class="thumbnail-container">
-                <img src="video.jpeg" alt="Einführung in Farbmelodien">
                 <span class="play-icon">▶️</span>
             </div>
             <h2 class="video-title">Einführung in Farbmelodien</h2>
@@ -238,8 +215,9 @@
     </div>
 
     <div id="videoModal" class="modal">
+        <!-- Botón movido fuera del contenedor del video para mantenerlo fijo y elegante -->
+        <button class="btn-close" onclick="schliesseVideo()" aria-label="Cerrar video">✕</button>
         <div class="modal-content">
-            <button class="btn-close" onclick="schliesseVideo()">❌ Schließen</button>
             <video id="videoPlayer" controls controlsList="nodownload">
                 Dein Browser unterstützt das Video-Tag leider nicht.
             </video>
@@ -254,17 +232,15 @@
             player.src = videoPfad; 
             modal.style.display = 'flex';
             
-            // Intenta reproducir el video
             player.play().catch(e => {
-                console.log("Autoplay blockiert (normal in einigen Browsern):", e);
+                console.log("Autoplay blockiert:", e);
             });
 
-            // Solicitar Pantalla Completa
             if (player.requestFullscreen) {
                 player.requestFullscreen();
-            } else if (player.webkitRequestFullscreen) { /* Safari */
+            } else if (player.webkitRequestFullscreen) {
                 player.webkitRequestFullscreen();
-            } else if (player.msRequestFullscreen) { /* IE11 */
+            } else if (player.msRequestFullscreen) {
                 player.msRequestFullscreen();
             }
         }
@@ -275,26 +251,23 @@
             player.removeAttribute('src'); 
             player.load();
             
-            // Salir de pantalla completa si aún está activa
             if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
                 if (document.exitFullscreen) {
                     document.exitFullscreen();
-                } else if (document.webkitExitFullscreen) { /* Safari */
+                } else if (document.webkitExitFullscreen) {
                     document.webkitExitFullscreen();
-                } else if (document.msExitFullscreen) { /* IE11 */
+                } else if (document.msExitFullscreen) {
                     document.msExitFullscreen();
                 }
             }
         }
 
-        // Si el usuario sale de pantalla completa usando los controles nativos (ej. botón 'Escape' o botón nativo del móvil), pausamos el video.
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
         document.addEventListener('msfullscreenchange', handleFullscreenChange);
 
         function handleFullscreenChange() {
             if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
-                // Si ya no estamos en pantalla completa, cerramos el modal
                 schliesseVideo();
             }
         }
