@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baraja Imprimible - Farbmelodien</title>
+    <style>
+        :root {
+            --bg-ui: #f1f5f9;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --card-border: #94a3b8;
+
+            /* Medidas físicas exactas en milímetros (Sistema modular de 22mm) */
+            --card-h: 64mm;
+            --w-eighth: 22mm;   /* Media carta (0.5 tiempos) */
+            --w-quarter: 44mm;  /* 1 carta (1 tiempo) */
+            --w-half: 88mm;     /* 2 cartas juntas (2 tiempos) */
+            --w-whole: 176mm;   /* 4 cartas juntas (4 tiempos) */
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-ui);
+            color: var(--text-dark);
+        }
+
+        /* =========================================
+           BARRA DE CONTROL (SOLO PANTALLA)
+           ========================================= */
+        .toolbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid #e2e8f0;
+            padding: 16px 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .toolbar-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .toolbar-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .title-block h1 {
+            margin: 0;
+            font-size: 1.35rem;
+            color: var(--text-dark);
+        }
+
+        .title-block p {
+            margin: 2px 0 0 0;
+            font-size: 0.88rem;
+            color: var(--text-muted);
+        }
+
+        .print-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 999px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+            transition: transform 0.15s, background 0.15s;
+        }
+
+        .print-btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .controls-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 10px;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .control-group {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pill-btn {
+            background: #f8fafc;
+            border: 1.5px solid #cbd5e1;
+            color: var(--text-dark);
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .pill-btn.active {
+            background: #0f172a;
+            color: white;
+            border-color: #0f172a;
+        }
+
+        .toggle-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            background: #f8fafc;
+            padding: 5px 12px;
+            border-radius: 999px;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .stats-bar {
+            max-width: 1100px;
+            margin: 16px auto 0 auto;
+            padding: 0 24px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .stat-chip {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 4px 10px;
+            border-radius: 8px;
+        }
+
+        /* =========================================
+           LIENZO DE CARTAS
+           ========================================= */
+        .sheet-container {
+            max-width: 210mm;
+            margin: 20px auto 60px auto;
+            background: white;
+            padding: 12mm 10mm;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border-radius: 8px;
+        }
+
+        .section-block {
+            margin-bottom: 10mm;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            border-bottom: 1.5px solid #e2e8f0;
+            padding-bottom: 2mm;
+            margin-bottom: 4mm;
+            break-after: avoid;
+            page-break-after: avoid;
+        }
+
+        .section-header h2 {
+            margin: 0;
+            font-size: 13pt;
+            color: #0f172a;
+        }
+
+        .section-header span {
+            font-size: 9pt;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .cards-flow {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3mm;
+            align-items: flex-start;
+        }
+
+        /* =========================================
+           DISEÑO DE LAS CARTAS (PROPORCIONES REALES)
+           ========================================= */
+        .card {
+            position: relative;
+            height: var(--card-h);
+            background: #ffffff;
+            border-radius: 3.5mm;
+            border: 0.4mm dashed var(--card-border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3mm;
+            break-inside: avoid;
+            page-break-inside: avoid;
+            overflow: hidden;
+        }
+
+        body.no-cut-guides .card {
+            border-style: solid;
+            border-color: #cbd5e1;
+        }
+
+        /* Anchos exactos */
+        .card.dur-05 { width: var(--w-eighth); padding: 2mm 1.5mm; }
+        .card.dur-1  { width: var(--w-quarter); }
+        .card.dur-2  { width: var(--w-half); }
+        .card.dur-4  { width: var(--w-whole); }
+
+        /* Guías internas sutiles de pulsos (para blancas y redondas) */
+        .beat-guides {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            pointer-events: none;
+        }
+
+        .beat-guide-slot {
+            flex: 1;
+            height: 100%;
+            border-right: 0.3mm dotted rgba(148, 163, 184, 0.45);
+        }
+
+        .beat-guide-slot:last-child {
+            border-right: none;
+        }
+
+        /* Esquinas superiores e inferiores */
+        .corner {
+            position: absolute;
+            font-size: 8.5pt;
+            font-weight: 800;
+            color: #475569;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            gap: 1mm;
+            z-index: 2;
+        }
+
+        .corner.top-left { top: 2.5mm; left: 2.8mm; }
+        .corner.bottom-right { bottom: 2.5mm; right: 2.8mm; transform: rotate(180deg); }
+
+        .card.dur-05 .corner {
+            font-size: 7.5pt;
+            left: 50%;
+            transform: translateX(-50%);
+            right: auto;
+        }
+
+        .card.dur-05 .corner.top-left { top: 2.5mm; }
+        .card.dur-05 .corner.bottom-right {
+            bottom: 2.5mm;
+            top: auto;
+            transform: translateX(-50%);
+        }
+
+        .symbol-badge {
+            font-size: 9.5pt;
+            color: #64748b;
+            font-weight: 700;
+        }
+
+        /* Forma central de la nota (Círculo / Cápsula / Media cápsula) */
+        .note-shape {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            box-shadow: inset 0 0 0 0.6mm rgba(0, 0, 0, 0.14);
+        }
+
+        /* Negra (1 tiempo): círculo perfecto */
+        .card.dur-1 .note-shape {
+            width: 30mm;
+            height: 30mm;
+            border-radius: 50%;
+            font-size: 16pt;
+        }
+
+        /* Corchea (0.5 tiempos): media carta -> óvalo vertical compacto */
+        .card.dur-05 .note-shape {
+            width: 15.5mm;
+            height: 30mm;
+            border-radius: 10mm;
+            font-size: 12pt;
+            border: 0.45mm dashed rgba(0, 0, 0, 0.28);
+            box-shadow: none;
+        }
+
+        /* Blanca (2 tiempos): cápsula alargada de 2 cartas */
+        .card.dur-2 .note-shape {
+            width: 72mm;
+            height: 30mm;
+            border-radius: 999px;
+            font-size: 17pt;
+            box-shadow: inset 0 0 0 0.7mm rgba(0, 0, 0, 0.22);
+        }
+
+        /* Redonda (4 tiempos): cápsula alargada de 4 cartas */
+        .card.dur-4 .note-shape {
+            width: 160mm;
+            height: 30mm;
+            border-radius: 999px;
+            font-size: 18pt;
+            box-shadow: inset 0 0 0 0.7mm rgba(0, 0, 0, 0.22);
+        }
+
+        /* Estilo para Silencios */
+        .card.is-rest .note-shape {
+            background-color: #e2e8f0 !important;
+            border: 0.6mm dashed #94a3b8;
+            box-shadow: none;
+            color: #64748b !important;
+        }
+
+        /* Etiqueta de duración en la base */
+        .dur-footer {
+            position: absolute;
+            bottom: 2.5mm;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 6.5pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: #94a3b8;
+            white-space: nowrap;
+            z-index: 2;
+        }
+
+        .card.dur-05 .dur-footer {
+            display: none;
+        }
+
+        /* =========================================
+           CUADRÍCULA IMPRIMIBLE PARA FOTO (ESCALA 1:1)
+           ========================================= */
+        .board-sheet {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4mm;
+            padding: 2mm 0;
+        }
+
+        .board-header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 0.4mm solid #cbd5e1;
+            padding-bottom: 2mm;
+            margin-bottom: 2mm;
+        }
+
+        .board-header h2 {
+            margin: 0;
+            font-size: 12pt;
+            color: #0f172a;
+        }
+
+        .board-header span {
+            font-size: 8.5pt;
+            font-weight: 700;
+            color: #475569;
+        }
+
+        .board-frame {
+            position: relative;
+            padding: 6mm 7mm;
+            background: #ffffff;
+            border-radius: 3mm;
+        }
+
+        /* Miras de esquina de alto contraste para encuadrar la foto con el móvil */
+        .frame-corner {
+            position: absolute;
+            width: 8mm;
+            height: 8mm;
+            border-color: #0f172a;
+            border-style: solid;
+            pointer-events: none;
+        }
+        .frame-corner.tl { top: 0; left: 0; border-width: 1.2mm 0 0 1.2mm; }
+        .frame-corner.tr { top: 0; right: 0; border-width: 1.2mm 1.2mm 0 0; }
+        .frame-corner.bl { bottom: 0; left: 0; border-width: 0 0 1.2mm 1.2mm; }
+        .frame-corner.br { bottom: 0; right: 0; border-width: 0 1.2mm 1.2mm 0; }
+
+        .board-rows {
+            display: flex;
+            flex-direction: column;
+            gap: 5mm;
+        }
+
+        .board-row-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .board-row-num {
+            position: absolute;
+            left: -6.2mm;
+            width: 5mm;
+            height: 5mm;
+            border-radius: 50%;
+            background: #0f172a;
+            color: #ffffff;
+            font-size: 7.5pt;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Fila exacta: sin huecos entre casillas para que las cartas encajen borde con borde */
+        .board-row {
+            display: flex;
+            height: var(--card-h);
+            border: 0.7mm solid #0f172a;
+            background: #ffffff;
+            position: relative;
+        }
+
+        /* Pequeñas marcas en las 4 esquinas de cada fila para alinear filas por separado en el escáner */
+        .row-tick {
+            position: absolute;
+            width: 2.5mm;
+            height: 2.5mm;
+            background: #0f172a;
+            z-index: 3;
+        }
+        .row-tick.tl { top: -0.7mm; left: -0.7mm; }
+        .row-tick.tr { top: -0.7mm; right: -0.7mm; }
+        .row-tick.bl { bottom: -0.7mm; left: -0.7mm; }
+        .row-tick.br { bottom: -0.7mm; right: -0.7mm; }
+
+        .board-slot {
+            position: relative;
+            width: var(--w-quarter);
+            height: 100%;
+            border-right: 0.45mm dashed #64748b;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            background: #ffffff;
+        }
+
+        .board-slot:last-child {
+            border-right: none;
+        }
+
+        /* Línea punteada suave en el centro (22mm) para colocar dos medias cartas (corcheas) */
+        .board-slot::after {
+            content: "";
+            position: absolute;
+            top: 4mm;
+            bottom: 4mm;
+            left: 50%;
+            border-left: 0.25mm dotted #cbd5e1;
+            pointer-events: none;
+        }
+
+        .slot-num {
+            margin-top: 1.5mm;
+            font-size: 7pt;
+            font-weight: 800;
+            color: #94a3b8;
+            background: #ffffff;
+            padding: 0 1mm;
+            z-index: 2;
+        }
+
+        .board-tip {
+            font-size: 8.5pt;
+            color: #475569;
+            text-align: center;
+            margin-top: 2mm;
+            max-width: 176mm;
+        }
+
+        .board-controls {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        body.mode-board .deck-controls {
+            display: none;
+        }
+
+        body.mode-board .board-controls {
+            display: flex;
+        }
+
+        /* Visibilidad condicional desde controles */
+        body.hide-letters .note-letter,
+        body.hide-letters .corner-letter {
+            display: none;
+        }
+
+        body.hide-symbols .symbol-badge,
+        body.hide-symbols .dur-footer {
+            display: none;
+        }
+
+        /* =========================================
+           ESTILOS DE IMPRESIÓN (A4 EXACTO)
+           ========================================= */
+        @page {
+            size: A4 portrait;
+            margin: 10mm;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .toolbar,
+            .stats-bar {
+                display: none !important;
+            }
+            .sheet-container {
+                max-width: none;
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+                border-radius: 0;
+            }
+            .section-block {
+                margin-bottom: 6mm;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="toolbar">
+        <div class="toolbar-inner">
+            <div class="toolbar-top">
+                <div class="title-block">
+                    <h1>🎵 Baraja Física — Farbmelodien</h1>
+                    <p>Sistema modular exacto: Corcheas (22×64 mm) · Negras (44×64 mm) · Blancas (88×64 mm) · Redondas (176×64 mm)</p>
+                </div>
+                <button class="print-btn" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+            </div>
+
+            <div class="controls-row">
+                <div class="control-group">
+                    <button class="pill-btn active" id="modeCatalog" onclick="setDeckMode('catalog')">Catálogo completo (1 de cada)</button>
+                    <button class="pill-btn" id="modePlayable" onclick="setDeckMode('playable')">Mazo jugable (con copias)</button>
+                    <button class="pill-btn" id="modeBoard" onclick="setDeckMode('board')">📐 Cuadrícula para foto</button>
+                </div>
+
+                <div class="control-group deck-controls">
+                    <label class="toggle-label">
+                        <input type="checkbox" checked onchange="toggleBodyClass('hide-letters', !this.checked)">
+                        Letras (C, D, E...)
+                    </label>
+                    <label class="toggle-label">
+                        <input type="checkbox" checked onchange="toggleBodyClass('hide-symbols', !this.checked)">
+                        Símbolos (♪ ♩ 𝅗𝅥 𝅝)
+                    </label>
+                    <label class="toggle-label">
+                        <input type="checkbox" checked onchange="toggleBodyClass('no-cut-guides', !this.checked)">
+                        Líneas de corte
+                    </label>
+                </div>
+
+                <div class="control-group board-controls">
+                    <button class="pill-btn active" id="boardBeats4" onclick="setBoardBeats(4)">4/4 (176 mm)</button>
+                    <button class="pill-btn" id="boardBeats3" onclick="setBoardBeats(3)">3/4 (132 mm)</button>
+                    <button class="pill-btn" id="boardRows1" onclick="setBoardRows(1)">1 fila</button>
+                    <button class="pill-btn active" id="boardRows2" onclick="setBoardRows(2)">2 filas</button>
+                    <button class="pill-btn" id="boardRows3" onclick="setBoardRows(3)">3 filas</button>
+                    <button class="pill-btn" id="boardRows4" onclick="setBoardRows(4)">4 filas</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="stats-bar" id="statsBar"></div>
+
+    <main class="sheet-container" id="deckContainer"></main>
+
+    <script>
+        // Código de colores exacto extraído de notation.html
+        const NOTES = [
+            { id: 'C',  name: 'C',  color: '#ff3333', textColor: '#ffffff' },
+            { id: 'D',  name: 'D',  color: '#ff8c00', textColor: '#ffffff' },
+            { id: 'E',  name: 'E',  color: '#ffd700', textColor: '#1e293b' },
+            { id: 'F',  name: 'F',  color: '#a2ff33', textColor: '#1e293b' },
+            { id: 'G',  name: 'G',  color: '#00c853', textColor: '#ffffff' },
+            { id: 'A',  name: 'A',  color: '#1a1aff', textColor: '#ffffff' },
+            { id: 'H',  name: 'H',  color: '#ff33cc', textColor: '#ffffff' },
+            { id: 'C2', name: 'C⬆', color: '#ff3333', textColor: '#ffffff' }
+        ];
+
+        const REST = { id: 'REST', name: '—', color: '#e2e8f0', textColor: '#64748b', isRest: true };
+
+        const SECTIONS = [
+            {
+                key: 'eighth',
+                title: '1. Corcheas — Medias cartas (½ tiempo)',
+                subtitle: '22 × 64 mm · Junta dos medias cartas para crear cualquiera de las 81 combinaciones posibles',
+                durClass: 'dur-05',
+                symbol: '♪',
+                restSymbol: '𝄾',
+                footer: '½ tiempo',
+                beats: 0.5,
+                includeRest: true,
+                playableCopies: 2,
+                playableRestCopies: 2
+            },
+            {
+                key: 'quarter',
+                title: '2. Negras — Cartas estándar (1 tiempo)',
+                subtitle: '44 × 64 mm · Unidad base del compás',
+                durClass: 'dur-1',
+                symbol: '♩',
+                restSymbol: '𝄽',
+                footer: '1 tiempo',
+                beats: 1,
+                includeRest: true,
+                playableCopies: 4,
+                playableRestCopies: 4
+            },
+            {
+                key: 'half',
+                title: '3. Blancas — Dos cartas juntas (2 tiempos)',
+                subtitle: '88 × 64 mm · Equivale a 2 negras seguidas',
+                durClass: 'dur-2',
+                symbol: '𝅗𝅥',
+                restSymbol: '𝄼',
+                footer: '2 tiempos',
+                beats: 2,
+                includeRest: true,
+                playableCopies: 2,
+                playableRestCopies: 2
+            },
+            {
+                key: 'whole',
+                title: '4. Redondas — Cuatro cartas juntas (4 tiempos)',
+                subtitle: '176 × 64 mm · Ocupa un compás completo de 4/4',
+                durClass: 'dur-4',
+                symbol: '𝅝',
+                restSymbol: '𝄻',
+                footer: '4 tiempos',
+                beats: 4,
+                includeRest: false,
+                playableCopies: 1,
+                playableRestCopies: 0
+            }
+        ];
+
+        let currentMode = 'catalog';
+        let boardBeats = 4;
+        let boardRows = 2;
+
+        function toggleBodyClass(className, add) {
+            document.body.classList.toggle(className, add);
+        }
+
+        function setDeckMode(mode) {
+            currentMode = mode;
+            document.body.classList.toggle('mode-board', mode === 'board');
+            document.getElementById('modeCatalog').classList.toggle('active', mode === 'catalog');
+            document.getElementById('modePlayable').classList.toggle('active', mode === 'playable');
+            document.getElementById('modeBoard').classList.toggle('active', mode === 'board');
+            renderDeck();
+        }
+
+        function setBoardBeats(beats) {
+            boardBeats = beats;
+            document.getElementById('boardBeats4').classList.toggle('active', beats === 4);
+            document.getElementById('boardBeats3').classList.toggle('active', beats === 3);
+            renderDeck();
+        }
+
+        function setBoardRows(rows) {
+            boardRows = rows;
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`boardRows${i}`).classList.toggle('active', rows === i);
+            }
+            renderDeck();
+        }
+
+        function createCardHTML(item, section) {
+            const isRest = Boolean(item.isRest);
+            const symbol = isRest ? section.restSymbol : section.symbol;
+            const displayLabel = isRest ? symbol : item.name;
+            const cornerLabel = isRest ? '' : item.name;
+
+            // Guías sutiles de división de pulsos para cartas dobles y cuádruples
+            let guidesHTML = '';
+            if (section.beats >= 2) {
+                let slots = '';
+                for (let i = 0; i < section.beats; i++) {
+                    slots += '<div class="beat-guide-slot"></div>';
+                }
+                guidesHTML = `<div class="beat-guides">${slots}</div>`;
+            }
+
+            // En corcheas, ponemos el símbolo arriba y abajo para aprovechar el ancho de 22mm
+            const topCorner = section.beats === 0.5
+                ? `<div class="corner top-left"><span class="symbol-badge">${symbol}</span></div>`
+                : `<div class="corner top-left"><span class="corner-letter">${cornerLabel}</span><span class="symbol-badge">${symbol}</span></div>`;
+
+            const bottomCorner = section.beats === 0.5
+                ? `<div class="corner bottom-right"><span class="symbol-badge">${symbol}</span></div>`
+                : `<div class="corner bottom-right"><span class="corner-letter">${cornerLabel}</span><span class="symbol-badge">${symbol}</span></div>`;
+
+            return `
+                <div class="card ${section.durClass} ${isRest ? 'is-rest' : ''}">
+                    ${guidesHTML}
+                    ${topCorner}
+                    <div class="note-shape" style="background-color: ${item.color}; color: ${item.textColor};">
+                        <span class="${isRest ? '' : 'note-letter'}">${displayLabel}</span>
+                    </div>
+                    <div class="dur-footer">${section.footer}</div>
+                    ${bottomCorner}
+                </div>
+            `;
+        }
+
+        function renderPhotoGrid(container, statsBar) {
+            const widthMm = boardBeats * 44;
+            const heightMm = boardRows * 64 + (boardRows - 1) * 5;
+
+            let rowsHTML = '';
+            for (let r = 1; r <= boardRows; r++) {
+                let slotsHTML = '';
+                for (let b = 1; b <= boardBeats; b++) {
+                    slotsHTML += `
+                        <div class="board-slot">
+                            <span class="slot-num">${b}</span>
+                        </div>
+                    `;
+                }
+                rowsHTML += `
+                    <div class="board-row-wrap">
+                        <div class="board-row-num">${r}</div>
+                        <div class="board-row">
+                            <span class="row-tick tl"></span>
+                            <span class="row-tick tr"></span>
+                            <span class="row-tick bl"></span>
+                            <span class="row-tick br"></span>
+                            ${slotsHTML}
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = `
+                <section class="board-sheet">
+                    <div class="board-header">
+                        <h2>📐 Tablero de Encuadre — Farbmelodien (${boardBeats}/4)</h2>
+                        <span>${boardRows} ${boardRows === 1 ? 'fila' : 'filas'} · Escala 1:1 (${widthMm} × ${heightMm} mm)</span>
+                    </div>
+
+                    <div class="board-frame">
+                        <span class="frame-corner tl"></span>
+                        <span class="frame-corner tr"></span>
+                        <span class="frame-corner bl"></span>
+                        <span class="frame-corner br"></span>
+                        <div class="board-rows">
+                            ${rowsHTML}
+                        </div>
+                    </div>
+
+                    <p class="board-tip">
+                        Coloca las cartas pegadas entre sí dentro de cada fila y haz la foto desde arriba alineando las <strong>esquinas negras</strong> con la rejilla del escáner. Imprime siempre al <strong>100 % de escala</strong>.
+                    </p>
+                </section>
+            `;
+
+            statsBar.innerHTML = `
+                <div class="stat-chip">Compás: <strong>${boardBeats}/4</strong></div>
+                <div class="stat-chip">Filas: <strong>${boardRows}</strong></div>
+                <div class="stat-chip">Tamaño real: <strong>${widthMm} × ${heightMm} mm</strong> (cabe en 1 folio A4)</div>
+            `;
+        }
+
+        function renderDeck() {
+            const container = document.getElementById('deckContainer');
+            const statsBar = document.getElementById('statsBar');
+            container.innerHTML = '';
+
+            if (currentMode === 'board') {
+                renderPhotoGrid(container, statsBar);
+                return;
+            }
+
+            let totalCards = 0;
+            const sectionCounts = [];
+
+            SECTIONS.forEach(section => {
+                const block = document.createElement('section');
+                block.className = 'section-block';
+
+                const itemsToRender = [];
+                const noteCopies = currentMode === 'catalog' ? 1 : section.playableCopies;
+                const restCopies = currentMode === 'catalog' ? (section.includeRest ? 1 : 0) : section.playableRestCopies;
+
+                NOTES.forEach(note => {
+                    for (let c = 0; c < noteCopies; c++) {
+                        itemsToRender.push(note);
+                    }
+                });
+
+                for (let r = 0; r < restCopies; r++) {
+                    itemsToRender.push(REST);
+                }
+
+                totalCards += itemsToRender.length;
+                sectionCounts.push(`${section.title.split('—')[0].trim()}: <strong>${itemsToRender.length}</strong>`);
+
+                block.innerHTML = `
+                    <div class="section-header">
+                        <h2>${section.title}</h2>
+                        <span>${section.subtitle}</span>
+                    </div>
+                    <div class="cards-flow">
+                        ${itemsToRender.map(item => createCardHTML(item, section)).join('')}
+                    </div>
+                `;
+
+                container.appendChild(block);
+            });
+
+            statsBar.innerHTML = `
+                <div class="stat-chip">Total en pantalla: <strong>${totalCards} cartas</strong></div>
+                ${sectionCounts.map(s => `<div class="stat-chip">${s}</div>`).join('')}
+            `;
+        }
+
+        renderDeck();
+    </script>
+</body>
+</html>

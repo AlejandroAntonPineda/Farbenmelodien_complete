@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Cartas en Cuadrícula — Farbmelodien</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #f1f5f9;
+            color: #0f172a;
+        }
+
+        .board-frame {
+            position: relative;
+            padding: 20px 24px 20px 30px;
+            background: #ffffff;
+            border-radius: 14px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+            border: 1px solid #e2e8f0;
+            max-width: 100%;
+        }
+
+        .frame-corner {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-color: #0f172a;
+            border-style: solid;
+            pointer-events: none;
+        }
+        .frame-corner.tl { top: 8px; left: 8px; border-width: 4px 0 0 4px; }
+        .frame-corner.tr { top: 8px; right: 8px; border-width: 4px 4px 0 0; }
+        .frame-corner.bl { bottom: 8px; left: 8px; border-width: 0 0 4px 4px; }
+        .frame-corner.br { bottom: 8px; right: 8px; border-width: 0 4px 4px 0; }
+
+        .board-row-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .board-row-num {
+            position: absolute;
+            left: -24px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #0f172a;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+        }
+
+        .board-row {
+            position: relative;
+            display: grid;
+            width: 100%;
+            border: 2.5px solid #0f172a;
+            background: #ffffff;
+            user-select: none;
+        }
+
+        .row-tick {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #0f172a;
+            z-index: 25;
+            pointer-events: none;
+        }
+        .row-tick.tl { top: -2.5px; left: -2.5px; }
+        .row-tick.tr { top: -2.5px; right: -2.5px; }
+        .row-tick.bl { bottom: -2.5px; left: -2.5px; }
+        .row-tick.br { bottom: -2.5px; right: -2.5px; }
+
+        .slot-cell {
+            position: relative;
+            height: 100%;
+            cursor: pointer;
+            transition: background-color 0.12s;
+        }
+        .slot-cell:hover {
+            background-color: rgba(59, 130, 246, 0.10);
+        }
+        .slot-cell.drag-over {
+            background-color: rgba(37, 99, 235, 0.22);
+        }
+        .slot-cell.beat-divider {
+            border-right: 1.5px dashed #64748b;
+        }
+        .slot-cell.half-divider {
+            border-right: 1px dotted #cbd5e1;
+        }
+
+        .placed-card {
+            position: relative;
+            z-index: 10;
+            height: 100%;
+            background: #ffffff;
+            border: 1.5px dashed #94a3b8;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.12s, box-shadow 0.12s;
+        }
+        .placed-card:hover {
+            box-shadow: inset 0 0 0 2px #3b82f6;
+        }
+        .placed-card.playing {
+            box-shadow: 0 0 0 3px #0f172a, 0 8px 18px rgba(15, 23, 42, 0.25);
+            transform: scale(1.03);
+            z-index: 20;
+        }
+
+        .remove-card-btn {
+            position: absolute;
+            top: 3px;
+            right: 3px;
+            width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.72);
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 800;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.15s;
+            z-index: 30;
+            border: none;
+            cursor: pointer;
+        }
+        .placed-card:hover .remove-card-btn,
+        .placed-card:focus-within .remove-card-btn {
+            opacity: 1;
+        }
+        @media (hover: none) {
+            .remove-card-btn { opacity: 0.85; }
+        }
+
+        .note-pill {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.15);
+            user-select: none;
+        }
+        .note-pill.is-rest {
+            background-color: #e2e8f0 !important;
+            border: 2px dashed #94a3b8;
+            box-shadow: none;
+            color: #64748b !important;
+        }
+        .note-pill.is-eighth {
+            border: 1.5px dashed rgba(0, 0, 0, 0.28);
+            box-shadow: none;
+        }
+
+        .tray-card {
+            transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+        }
+        .tray-card.selected {
+            border-color: #2563eb !important;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.28);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-10">
+
+    <!-- Aviso flotante -->
+    <div id="toast" class="fixed bottom-5 left-1/2 z-50 hidden -translate-x-1/2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-bold text-white shadow-xl"></div>
+
+    <!-- Modal de vista previa y descarga de foto -->
+    <div id="photoModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/75 p-4 backdrop-blur-sm" onclick="closePhotoModal()">
+        <div class="flex max-h-[90vh] w-full max-w-lg flex-col items-center gap-4 rounded-2xl bg-white p-5 shadow-2xl" onclick="event.stopPropagation()">
+            <div class="flex w-full items-center justify-between">
+                <h2 class="text-base font-extrabold text-slate-900">📸 Foto del tablero generada</h2>
+                <button type="button" onclick="closePhotoModal()" class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-extrabold text-slate-600 hover:bg-slate-200">✕</button>
+            </div>
+            <div class="overflow-auto rounded-xl border border-slate-200 bg-slate-50 p-2">
+                <img id="photoPreviewImg" alt="Vista previa del tablero" class="max-h-[55vh] w-auto object-contain" />
+            </div>
+            <p class="text-center text-xs font-medium text-slate-500">
+                Si no se descarga sola, pulsa el botón azul o <strong>mantén pulsada la imagen</strong> (clic derecho en PC) y elige <em>Guardar imagen</em>.
+            </p>
+            <div class="flex w-full justify-end gap-2">
+                <button type="button" onclick="closePhotoModal()" class="rounded-full bg-slate-100 px-4 py-2 text-xs font-extrabold text-slate-700 hover:bg-slate-200">Cerrar</button>
+                <a id="photoDownloadLink" download="Tablero_Farbmelodien.jpg" class="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-4 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-blue-700">
+                    ⬇️ Descargar JPG
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra superior -->
+    <header class="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
+        <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+            <div>
+                <h1 class="text-lg font-extrabold tracking-tight text-slate-900">🃏 Simulador de Cartas — Farbmelodien</h1>
+                <p class="text-xs font-medium text-slate-500">Elige una carta abajo y toca (o arrastra) sobre la cuadrícula para probar tus melodías</p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <button type="button" id="btnPlay" onclick="togglePlay()" class="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-sm font-extrabold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95">
+                    ▶️ Escuchar
+                </button>
+                <button type="button" onclick="downloadBoardPhoto()" class="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-3.5 py-2 text-xs font-extrabold text-white shadow-sm transition hover:bg-blue-700 active:scale-95" title="Descarga una imagen del tablero para probarla en el escáner">
+                    📸 Guardar foto
+                </button>
+                <button type="button" onclick="openInNotation()" class="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-3.5 py-2 text-xs font-extrabold text-white shadow-sm transition hover:bg-slate-800 active:scale-95">
+                    🎹 Abrir en Notación ↗
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="mx-auto mt-5 flex max-w-5xl flex-col gap-5 px-4">
+
+        <!-- Barra de configuración del tablero -->
+        <section class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Compás:</span>
+                <button type="button" id="btnBeats4" onclick="setBeats(4)" class="rounded-full bg-slate-900 px-3 py-1 text-xs font-extrabold text-white transition">4/4</button>
+                <button type="button" id="btnBeats3" onclick="setBeats(3)" class="rounded-full bg-slate-100 px-3 py-1 text-xs font-extrabold text-slate-700 transition hover:bg-slate-200">3/4</button>
+
+                <span class="ml-2 text-xs font-bold uppercase tracking-wide text-slate-400">Filas:</span>
+                <div class="flex items-center gap-1">
+                    <button type="button" id="btnRow1" onclick="setRows(1)" class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-extrabold text-slate-700 transition hover:bg-slate-200">1</button>
+                    <button type="button" id="btnRow2" onclick="setRows(2)" class="rounded-full bg-slate-900 px-2.5 py-1 text-xs font-extrabold text-white transition">2</button>
+                    <button type="button" id="btnRow3" onclick="setRows(3)" class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-extrabold text-slate-700 transition hover:bg-slate-200">3</button>
+                    <button type="button" id="btnRow4" onclick="setRows(4)" class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-extrabold text-slate-700 transition hover:bg-slate-200">4</button>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="loadExample()" class="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-extrabold text-amber-700 transition hover:bg-amber-100">
+                    ✨ Cargar ejemplo
+                </button>
+                <button type="button" onclick="clearBoard()" class="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-extrabold text-rose-600 transition hover:bg-rose-100">
+                    🧹 Vaciar tablero
+                </button>
+            </div>
+        </section>
+
+        <!-- ZONA 1: CUADRÍCULA INTERACTIVA DE ENCUADRE -->
+        <section class="flex flex-col items-center">
+            <div id="boardFrame" class="board-frame w-full max-w-[740px]">
+                <span class="frame-corner tl"></span>
+                <span class="frame-corner tr"></span>
+                <span class="frame-corner bl"></span>
+                <span class="frame-corner br"></span>
+
+                <div id="boardRows" class="flex flex-col gap-3.5"></div>
+            </div>
+            <p class="mt-2.5 text-center text-xs font-medium text-slate-500">
+                💡 <strong>Consejo:</strong> Para corcheas (½), toca el lado <strong>izquierdo</strong> o <strong>derecho</strong> de una casilla. Pulsa <strong>×</strong> en cualquier carta para quitarla.
+            </p>
+        </section>
+
+        <!-- ZONA 2: BANDEJA DE CARTAS DE LA BARAJA -->
+        <section class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex flex-wrap items-center gap-1.5">
+                    <button type="button" id="durBtn05" onclick="selectDuration(0.5)" class="rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs font-extrabold text-slate-700 transition hover:bg-slate-100">
+                        ♪ Corchea (½)
+                    </button>
+                    <button type="button" id="durBtn1" onclick="selectDuration(1)" class="rounded-full border border-blue-600 bg-blue-600 px-3.5 py-1.5 text-xs font-extrabold text-white shadow-sm transition">
+                        ♩ Negra (1)
+                    </button>
+                    <button type="button" id="durBtn2" onclick="selectDuration(2)" class="rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs font-extrabold text-slate-700 transition hover:bg-slate-100">
+                        𝅗𝅥 Blanca (2)
+                    </button>
+                    <button type="button" id="durBtn4" onclick="selectDuration(4)" class="rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs font-extrabold text-slate-700 transition hover:bg-slate-100">
+                        𝅝 Redonda (4)
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button type="button" id="eraserBtn" onclick="toggleEraser()" class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-extrabold text-slate-700 transition hover:bg-slate-100">
+                        🧽 Borrador
+                    </button>
+                </div>
+            </div>
+
+            <div id="cardTray" class="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3"></div>
+        </section>
+
+    </main>
+
+    <!-- Canvas oculto para exportar la foto -->
+    <canvas id="exportCanvas" class="hidden"></canvas>
+
+    <script>
+        const NOTATION_FILE = 'notation_2.html';
+
+        const NOTES = [
+            { id: 'C',    name: 'C',  color: '#ff3333', textColor: '#ffffff', freq: 261.63 },
+            { id: 'D',    name: 'D',  color: '#ff8c00', textColor: '#ffffff', freq: 293.66 },
+            { id: 'E',    name: 'E',  color: '#ffd700', textColor: '#1e293b', freq: 329.63 },
+            { id: 'F',    name: 'F',  color: '#a2ff33', textColor: '#1e293b', freq: 349.23 },
+            { id: 'G',    name: 'G',  color: '#00c853', textColor: '#ffffff', freq: 392.00 },
+            { id: 'A',    name: 'A',  color: '#1a1aff', textColor: '#ffffff', freq: 440.00 },
+            { id: 'H',    name: 'H',  color: '#ff33cc', textColor: '#ffffff', freq: 493.88 },
+            { id: 'C2',   name: 'C⬆', color: '#ff3333', textColor: '#ffffff', freq: 523.25 },
+            { id: 'REST', name: '—',  color: '#e2e8f0', textColor: '#64748b', freq: 0, isRest: true }
+        ];
+
+        const DUR_META = {
+            0.5: { label: '½ tiempo',  symbol: '♪', restSymbol: '𝄾', halfUnits: 1 },
+            1:   { label: '1 tiempo',  symbol: '♩', restSymbol: '𝄽', halfUnits: 2 },
+            2:   { label: '2 tiempos', symbol: '𝅗𝅥', restSymbol: '𝄼', halfUnits: 4 },
+            4:   { label: '4 tiempos', symbol: '𝅝', restSymbol: '𝄻', halfUnits: 8 }
+        };
+
+        let beatsPerMeasure = 4;
+        let numRows = 2;
+        let selectedDuration = 1;
+        let selectedNoteId = 'C';
+        let eraserMode = false;
+        let boardState = [[], []];
+
+        let audioCtx = null;
+        let isPlaying = false;
+        const BPM = 75;
+        const BEAT_MS = (60 / BPM) * 1000;
+        let draggedCard = null;
+
+        let toastTimer = null;
+        function showToast(msg) {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.classList.remove('hidden');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => el.classList.add('hidden'), 2800);
+        }
+
+        function getNoteById(id) {
+            return NOTES.find(n => n.id === id) || NOTES[0];
+        }
+
+        function setBeats(b) {
+            if (beatsPerMeasure === b) return;
+            beatsPerMeasure = b;
+            document.getElementById('btnBeats4').className = b === 4
+                ? 'rounded-full bg-slate-900 px-3 py-1 text-xs font-extrabold text-white transition'
+                : 'rounded-full bg-slate-100 px-3 py-1 text-xs font-extrabold text-slate-700 transition hover:bg-slate-200';
+            document.getElementById('btnBeats3').className = b === 3
+                ? 'rounded-full bg-slate-900 px-3 py-1 text-xs font-extrabold text-white transition'
+                : 'rounded-full bg-slate-100 px-3 py-1 text-xs font-extrabold text-slate-700 transition hover:bg-slate-200';
+
+            const maxHalf = beatsPerMeasure * 2;
+            boardState = boardState.map(row =>
+                row.filter(c => c.startHalf + DUR_META[c.dur].halfUnits <= maxHalf)
+            );
+            if (b === 3 && selectedDuration === 4) {
+                selectDuration(1);
+            }
+            document.getElementById('durBtn4').disabled = (b === 3);
+            document.getElementById('durBtn4').classList.toggle('opacity-40', b === 3);
+            document.getElementById('durBtn4').classList.toggle('cursor-not-allowed', b === 3);
+
+            renderBoard();
+        }
+
+        function setRows(r) {
+            numRows = r;
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`btnRow${i}`).className = i === r
+                    ? 'rounded-full bg-slate-900 px-2.5 py-1 text-xs font-extrabold text-white transition'
+                    : 'rounded-full bg-slate-100 px-2.5 py-1 text-xs font-extrabold text-slate-700 transition hover:bg-slate-200';
+            }
+            while (boardState.length < numRows) boardState.push([]);
+            if (boardState.length > numRows) boardState = boardState.slice(0, numRows);
+            renderBoard();
+        }
+
+        function selectDuration(dur) {
+            if (dur === 4 && beatsPerMeasure === 3) {
+                showToast('La redonda (4 tiempos) solo cabe en compás 4/4.');
+                return;
+            }
+            selectedDuration = dur;
+            eraserMode = false;
+            updateDurationButtons();
+            renderTray();
+        }
+
+        function toggleEraser() {
+            eraserMode = !eraserMode;
+            updateDurationButtons();
+            renderTray();
+        }
+
+        function updateDurationButtons() {
+            const map = { 0.5: 'durBtn05', 1: 'durBtn1', 2: 'durBtn2', 4: 'durBtn4' };
+            Object.entries(map).forEach(([d, id]) => {
+                const btn = document.getElementById(id);
+                const active = !eraserMode && parseFloat(d) === selectedDuration;
+                btn.className = active
+                    ? 'rounded-full border border-blue-600 bg-blue-600 px-3.5 py-1.5 text-xs font-extrabold text-white shadow-sm transition'
+                    : 'rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs font-extrabold text-slate-700 transition hover:bg-slate-100';
+                if (parseFloat(d) === 4 && beatsPerMeasure === 3) {
+                    btn.classList.add('opacity-40', 'cursor-not-allowed');
+                }
+            });
+
+            const eb = document.getElementById('eraserBtn');
+            eb.className = eraserMode
+                ? 'rounded-full border border-rose-600 bg-rose-600 px-3 py-1.5 text-xs font-extrabold text-white shadow-sm transition'
+                : 'rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-extrabold text-slate-700 transition hover:bg-slate-100';
+        }
+
+        function renderTray() {
+            const tray = document.getElementById('cardTray');
+            tray.innerHTML = '';
+            const meta = DUR_META[selectedDuration];
+
+            NOTES.forEach(note => {
+                if (selectedDuration === 4 && note.isRest) return;
+
+                const isSelected = !eraserMode && selectedNoteId === note.id;
+                const card = document.createElement('button');
+                card.type = 'button';
+                card.draggable = true;
+
+                let widthClass = 'w-[60px]';
+                let pillStyle = 'width: 36px; height: 36px; border-radius: 999px; font-size: 13px;';
+                if (selectedDuration === 0.5) {
+                    widthClass = 'w-[42px]';
+                    pillStyle = 'width: 24px; height: 40px; border-radius: 999px; font-size: 11px;';
+                } else if (selectedDuration === 2) {
+                    widthClass = 'w-[92px]';
+                    pillStyle = 'width: 72px; height: 34px; border-radius: 999px; font-size: 13px;';
+                } else if (selectedDuration === 4) {
+                    widthClass = 'w-[124px]';
+                    pillStyle = 'width: 102px; height: 34px; border-radius: 999px; font-size: 13px;';
+                }
+
+                card.className = `tray-card relative flex h-[82px] ${widthClass} flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-white p-1.5 shadow-sm hover:border-blue-400 ${isSelected ? 'selected' : ''}`;
+                const symbol = note.isRest ? meta.restSymbol : meta.symbol;
+                const centerLabel = note.isRest ? symbol : note.name;
+
+                card.innerHTML = `
+                    <span class="absolute left-1.5 top-1 text-[9px] font-extrabold text-slate-500">${note.isRest ? '' : note.name}${symbol}</span>
+                    <div class="note-pill ${note.isRest ? 'is-rest' : ''} ${selectedDuration === 0.5 ? 'is-eighth' : ''}"
+                         style="${pillStyle} background-color: ${note.color}; color: ${note.textColor};">
+                        ${centerLabel}
+                    </div>
+                `;
+
+                card.onclick = () => {
+                    eraserMode = false;
+                    selectedNoteId = note.id;
+                    updateDurationButtons();
+                    renderTray();
+                    if (!note.isRest) playTone(note.freq, Math.min(selectedDuration, 1));
+                };
+
+                card.ondragstart = (e) => {
+                    eraserMode = false;
+                    selectedNoteId = note.id;
+                    draggedCard = { noteId: note.id, dur: selectedDuration };
+                    e.dataTransfer.effectAllowed = 'copy';
+                    e.dataTransfer.setData('text/plain', JSON.stringify(draggedCard));
+                };
+
+                card.ondragend = () => {
+                    draggedCard = null;
+                };
+
+                tray.appendChild(card);
+            });
+        }
+
+        function placeCard(rowIdx, clickedHalf, noteId, dur) {
+            const maxHalf = beatsPerMeasure * 2;
+            const spanHalf = DUR_META[dur].halfUnits;
+            let startHalf = dur === 0.5 ? clickedHalf : Math.floor(clickedHalf / 2) * 2;
+
+            if (startHalf + spanHalf > maxHalf) {
+                showToast(`Una carta de ${DUR_META[dur].label} no cabe en ese hueco de la fila.`);
+                return;
+            }
+
+            const endHalf = startHalf + spanHalf;
+            boardState[rowIdx] = boardState[rowIdx].filter(c => {
+                const cEnd = c.startHalf + DUR_META[c.dur].halfUnits;
+                return cEnd <= startHalf || c.startHalf >= endHalf;
+            });
+
+            boardState[rowIdx].push({ startHalf, dur, noteId });
+            boardState[rowIdx].sort((a, b) => a.startHalf - b.startHalf);
+
+            const note = getNoteById(noteId);
+            if (!note.isRest) playTone(note.freq, Math.min(dur, 1.5));
+
+            renderBoard();
+        }
+
+        function removeCard(rowIdx, startHalf) {
+            boardState[rowIdx] = boardState[rowIdx].filter(c => c.startHalf !== startHalf);
+            renderBoard();
+        }
+
+        function clearBoard() {
+            if (isPlaying) togglePlay();
+            boardState = Array.from({ length: numRows }, () => []);
+            renderBoard();
+            showToast('Tablero vaciado.');
+        }
+
+        function loadExample() {
+            if (isPlaying) togglePlay();
+            setBeats(4);
+            setRows(2);
+            boardState = [
+                [
+                    { startHalf: 0, dur: 1,   noteId: 'C' },
+                    { startHalf: 2, dur: 1,   noteId: 'D' },
+                    { startHalf: 4, dur: 1,   noteId: 'E' },
+                    { startHalf: 6, dur: 1,   noteId: 'C' }
+                ],
+                [
+                    { startHalf: 0, dur: 0.5, noteId: 'G' },
+                    { startHalf: 1, dur: 0.5, noteId: 'A' },
+                    { startHalf: 2, dur: 0.5, noteId: 'G' },
+                    { startHalf: 3, dur: 0.5, noteId: 'F' },
+                    { startHalf: 4, dur: 2,   noteId: 'E' }
+                ]
+            ];
+            renderBoard();
+            showToast('Ejemplo cargado con negras, corcheas y blanca.');
+        }
+
+        function renderBoard() {
+            const container = document.getElementById('boardRows');
+            container.innerHTML = '';
+            const totalHalf = beatsPerMeasure * 2;
+            const rowAspect = `${beatsPerMeasure * 44} / 64`;
+
+            for (let r = 0; r < numRows; r++) {
+                const wrap = document.createElement('div');
+                wrap.className = 'board-row-wrap';
+
+                const numBadge = document.createElement('div');
+                numBadge.className = 'board-row-num';
+                numBadge.textContent = String(r + 1);
+                wrap.appendChild(numBadge);
+
+                const rowEl = document.createElement('div');
+                rowEl.className = 'board-row';
+                rowEl.style.gridTemplateColumns = `repeat(${totalHalf}, minmax(0, 1fr))`;
+                rowEl.style.aspectRatio = rowAspect;
+
+                ['tl', 'tr', 'bl', 'br'].forEach(pos => {
+                    const tick = document.createElement('span');
+                    tick.className = `row-tick ${pos}`;
+                    rowEl.appendChild(tick);
+                });
+
+                const occ = new Array(totalHalf).fill(null);
+                boardState[r].forEach(card => {
+                    const span = DUR_META[card.dur].halfUnits;
+                    for (let k = 0; k < span; k++) {
+                        if (card.startHalf + k < totalHalf) {
+                            occ[card.startHalf + k] = (k === 0) ? card : 'SPAN';
+                        }
+                    }
+                });
+
+                let h = 0;
+                while (h < totalHalf) {
+                    const cell = occ[h];
+
+                    if (cell && cell !== 'SPAN') {
+                        const span = DUR_META[cell.dur].halfUnits;
+                        const note = getNoteById(cell.noteId);
+                        const meta = DUR_META[cell.dur];
+                        const symbol = note.isRest ? meta.restSymbol : meta.symbol;
+                        const centerLabel = note.isRest ? symbol : note.name;
+
+                        const cardEl = document.createElement('div');
+                        cardEl.className = 'placed-card';
+                        cardEl.dataset.row = String(r);
+                        cardEl.dataset.startHalf = String(cell.startHalf);
+                        cardEl.style.gridColumn = `span ${span} / span ${span}`;
+
+                        let pillW = '68%';
+                        let pillH = '47%';
+                        let pillRadius = '999px';
+                        let fontSize = 'clamp(12px, 2.2vw, 20px)';
+                        if (cell.dur === 0.5) {
+                            pillW = '74%';
+                            pillH = '47%';
+                            fontSize = 'clamp(10px, 1.7vw, 15px)';
+                        } else if (cell.dur === 2) {
+                            pillW = '82%';
+                            pillH = '47%';
+                        } else if (cell.dur === 4) {
+                            pillW = '91%';
+                            pillH = '47%';
+                        }
+
+                        let guidesHtml = '';
+                        if (cell.dur >= 2) {
+                            let slots = '';
+                            for (let g = 0; g < cell.dur; g++) {
+                                slots += `<div style="flex:1; height:100%; ${g < cell.dur - 1 ? 'border-right:1px dotted rgba(148,163,184,0.5);' : ''}"></div>`;
+                            }
+                            guidesHtml = `<div style="position:absolute; inset:0; display:flex; pointer-events:none;">${slots}</div>`;
+                        }
+
+                        const cornerHtml = cell.dur === 0.5
+                            ? `<span style="position:absolute; top:4px; left:50%; transform:translateX(-50%); font-size:10px; font-weight:800; color:#475569;">${symbol}</span>`
+                            : `<span style="position:absolute; top:4px; left:6px; font-size:11px; font-weight:800; color:#475569;">${note.isRest ? '' : note.name}${symbol}</span>`;
+
+                        cardEl.innerHTML = `
+                            ${guidesHtml}
+                            ${cornerHtml}
+                            <div class="note-pill ${note.isRest ? 'is-rest' : ''} ${cell.dur === 0.5 ? 'is-eighth' : ''}"
+                                 style="width:${pillW}; height:${pillH}; border-radius:${pillRadius}; background-color:${note.color}; color:${note.textColor}; font-size:${fontSize};">
+                                ${centerLabel}
+                            </div>
+                            <button type="button" class="remove-card-btn" title="Quitar carta">×</button>
+                        `;
+
+                        cardEl.querySelector('.remove-card-btn').onclick = (e) => {
+                            e.stopPropagation();
+                            removeCard(r, cell.startHalf);
+                        };
+
+                        cardEl.onclick = (e) => {
+                            if (eraserMode) {
+                                removeCard(r, cell.startHalf);
+                                return;
+                            }
+                            const rect = cardEl.getBoundingClientRect();
+                            const relX = Math.max(0, Math.min(0.999, (e.clientX - rect.left) / rect.width));
+                            const subHalf = cell.startHalf + Math.floor(relX * span);
+                            placeCard(r, subHalf, selectedNoteId, selectedDuration);
+                        };
+
+                        cardEl.ondragover = (e) => { e.preventDefault(); };
+                        cardEl.ondrop = (e) => {
+                            e.preventDefault();
+                            if (!draggedCard) return;
+                            const rect = cardEl.getBoundingClientRect();
+                            const relX = Math.max(0, Math.min(0.999, (e.clientX - rect.left) / rect.width));
+                            const subHalf = cell.startHalf + Math.floor(relX * span);
+                            placeCard(r, subHalf, draggedCard.noteId, draggedCard.dur);
+                        };
+
+                        rowEl.appendChild(cardEl);
+                        h += span;
+                    } else {
+                        const halfIndex = h;
+                        const slotEl = document.createElement('div');
+                        const isEndOfBeat = (halfIndex % 2 === 1) && (halfIndex < totalHalf - 1);
+                        const isMidBeat = (halfIndex % 2 === 0);
+
+                        slotEl.className = `slot-cell ${isEndOfBeat ? 'beat-divider' : ''} ${isMidBeat ? 'half-divider' : ''}`;
+
+                        if (halfIndex % 2 === 0) {
+                            const beatNum = Math.floor(halfIndex / 2) + 1;
+                            slotEl.innerHTML = `<span style="position:absolute; top:4px; right:-5px; font-size:10px; font-weight:800; color:#94a3b8; pointer-events:none; z-index:2;">${beatNum}</span>`;
+                        }
+
+                        slotEl.onclick = () => {
+                            if (eraserMode) return;
+                            placeCard(r, halfIndex, selectedNoteId, selectedDuration);
+                        };
+
+                        slotEl.ondragover = (e) => {
+                            e.preventDefault();
+                            slotEl.classList.add('drag-over');
+                        };
+                        slotEl.ondragleave = () => slotEl.classList.remove('drag-over');
+                        slotEl.ondrop = (e) => {
+                            e.preventDefault();
+                            slotEl.classList.remove('drag-over');
+                            if (!draggedCard) return;
+                            placeCard(r, halfIndex, draggedCard.noteId, draggedCard.dur);
+                        };
+
+                        rowEl.appendChild(slotEl);
+                        h += 1;
+                    }
+                }
+
+                wrap.appendChild(rowEl);
+                container.appendChild(wrap);
+            }
+        }
+
+        function playTone(freq, durBeats = 1) {
+            if (!freq) return;
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const now = audioCtx.currentTime;
+            const durSec = Math.max(0.12, (durBeats * BEAT_MS) / 1000);
+
+            const makeOsc = (f, vol, type) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(f, now);
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(vol, now + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + durSec);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + durSec);
+            };
+
+            makeOsc(freq, 0.45, 'triangle');
+            makeOsc(freq * 2, 0.1, 'sine');
+        }
+
+        async function togglePlay() {
+            const btn = document.getElementById('btnPlay');
+            if (isPlaying) {
+                isPlaying = false;
+                return;
+            }
+
+            const hasAnyCard = boardState.some(row => row.length > 0);
+            if (!hasAnyCard) {
+                showToast('Coloca al menos una carta en la cuadrícula para escuchar.');
+                return;
+            }
+
+            isPlaying = true;
+            btn.innerHTML = '⏹️ Parar';
+            btn.classList.replace('bg-emerald-600', 'bg-rose-600');
+            btn.classList.replace('hover:bg-emerald-700', 'hover:bg-rose-700');
+
+            const totalHalf = beatsPerMeasure * 2;
+
+            outerLoop:
+            for (let r = 0; r < numRows; r++) {
+                let h = 0;
+                while (h < totalHalf) {
+                    if (!isPlaying) break outerLoop;
+
+                    const card = boardState[r].find(c => c.startHalf === h);
+                    if (card) {
+                        const span = DUR_META[card.dur].halfUnits;
+                        const note = getNoteById(card.noteId);
+                        const cardEl = document.querySelector(`.placed-card[data-row="${r}"][data-start-half="${h}"]`);
+                        if (cardEl) cardEl.classList.add('playing');
+                        if (!note.isRest) playTone(note.freq, card.dur);
+
+                        await new Promise(res => setTimeout(res, BEAT_MS * card.dur));
+                        if (cardEl) cardEl.classList.remove('playing');
+                        h += span;
+                    } else {
+                        await new Promise(res => setTimeout(res, BEAT_MS * 0.5));
+                        h += 1;
+                    }
+                }
+            }
+
+            isPlaying = false;
+            btn.innerHTML = '▶️ Escuchar';
+            btn.classList.replace('bg-rose-600', 'bg-emerald-600');
+            btn.classList.replace('hover:bg-rose-700', 'hover:bg-emerald-700');
+        }
+
+        function buildNotationPayload() {
+            const pattern = [];
+
+            for (let r = 0; r < numRows; r++) {
+                let b = 0;
+                while (b < beatsPerMeasure) {
+                    const h0 = b * 2;
+                    const h1 = h0 + 1;
+                    const cardAtH0 = boardState[r].find(c => c.startHalf === h0);
+                    const cardAtH1 = boardState[r].find(c => c.startHalf === h1);
+
+                    if (cardAtH0 && cardAtH0.dur >= 1) {
+                        const id = cardAtH0.noteId === 'REST' ? 'null' : cardAtH0.noteId;
+                        pattern.push({ id, id2: 'null', dur: String(cardAtH0.dur) });
+                        for (let t = 1; t < cardAtH0.dur; t++) {
+                            pattern.push({ id: 'tie', id2: 'null', dur: '1' });
+                        }
+                        b += cardAtH0.dur;
+                    } else if ((cardAtH0 && cardAtH0.dur === 0.5) || (cardAtH1 && cardAtH1.dur === 0.5)) {
+                        const id1 = (cardAtH0 && cardAtH0.noteId !== 'REST') ? cardAtH0.noteId : 'null';
+                        const id2 = (cardAtH1 && cardAtH1.noteId !== 'REST') ? cardAtH1.noteId : 'null';
+                        pattern.push({ id: id1, id2, dur: '0.5' });
+                        b += 1;
+                    } else {
+                        pattern.push({ id: 'null', id2: 'null', dur: '1' });
+                        b += 1;
+                    }
+                }
+            }
+
+            return { pattern, beats: beatsPerMeasure };
+        }
+
+        function encodeMelody(obj) {
+            const bytes = new TextEncoder().encode(JSON.stringify(obj));
+            let bin = '';
+            bytes.forEach(byte => { bin += String.fromCharCode(byte); });
+            return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+
+        function openInNotation() {
+            const hasAnyCard = boardState.some(row => row.length > 0);
+            if (!hasAnyCard) {
+                showToast('Coloca primero algunas cartas en la cuadrícula.');
+                return;
+            }
+            const encoded = encodeMelody(buildNotationPayload());
+            window.location.href = `${NOTATION_FILE}?melody=${encoded}`;
+        }
+
+        function drawRoundedRect(ctx, x, y, w, h, r) {
+            const radius = Math.min(r, w / 2, h / 2);
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + w - radius, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+            ctx.lineTo(x + w, y + h - radius);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+            ctx.lineTo(x + radius, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+        }
+
+        function closePhotoModal() {
+            const modal = document.getElementById('photoModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        let lastBlobUrl = null;
+
+        function downloadBoardPhoto() {
+            const hasAnyCard = boardState.some(row => row.length > 0);
+            if (!hasAnyCard) {
+                showToast('El tablero está vacío. Coloca cartas o pulsa "✨ Cargar ejemplo" primero.');
+                return;
+            }
+
+            try {
+                const canvas = document.getElementById('exportCanvas');
+                const ctx = canvas.getContext('2d');
+
+                const pxPerMm = 5;
+                const slotW = 44 * pxPerMm;
+                const rowH = 64 * pxPerMm;
+                const rowGap = 5 * pxPerMm;
+                const padX = 16 * pxPerMm;
+                const padY = 14 * pxPerMm;
+
+                const gridW = beatsPerMeasure * slotW;
+                const gridH = numRows * rowH + (numRows - 1) * rowGap;
+
+                canvas.width = gridW + padX * 2;
+                canvas.height = gridH + padY * 2;
+
+                // Fondo blanco sólido (necesario para JPG)
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Miras de esquina negras
+                const mLen = 8 * pxPerMm;
+                const mOff = 6 * pxPerMm;
+                ctx.strokeStyle = '#0f172a';
+                ctx.lineWidth = 5;
+                ctx.beginPath(); ctx.moveTo(mOff, mOff + mLen); ctx.lineTo(mOff, mOff); ctx.lineTo(mOff + mLen, mOff); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(canvas.width - mOff - mLen, mOff); ctx.lineTo(canvas.width - mOff, mOff); ctx.lineTo(canvas.width - mOff, mOff + mLen); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(mOff, canvas.height - mOff - mLen); ctx.lineTo(mOff, canvas.height - mOff); ctx.lineTo(mOff + mLen, canvas.height - mOff); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(canvas.width - mOff - mLen, canvas.height - mOff); ctx.lineTo(canvas.width - mOff, canvas.height - mOff); ctx.lineTo(canvas.width - mOff, canvas.height - mOff - mLen); ctx.stroke();
+
+                for (let r = 0; r < numRows; r++) {
+                    const rx = padX;
+                    const ry = padY + r * (rowH + rowGap);
+
+                    // Número de fila
+                    ctx.fillStyle = '#0f172a';
+                    ctx.beginPath();
+                    ctx.arc(rx - 22, ry + rowH / 2, 13, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 16px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(String(r + 1), rx - 22, ry + rowH / 2 + 1);
+
+                    // Borde de fila
+                    ctx.strokeStyle = '#0f172a';
+                    ctx.lineWidth = 3.5;
+                    ctx.strokeRect(rx, ry, gridW, rowH);
+
+                    // Divisiones de casillas
+                    for (let b = 1; b < beatsPerMeasure; b++) {
+                        const bx = rx + b * slotW;
+                        ctx.save();
+                        ctx.setLineDash([8, 6]);
+                        ctx.strokeStyle = '#94a3b8';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(bx, ry);
+                        ctx.lineTo(bx, ry + rowH);
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+
+                    // Cartas colocadas en la fila
+                    boardState[r].forEach(card => {
+                        const note = getNoteById(card.noteId);
+                        const meta = DUR_META[card.dur];
+                        const cw = (slotW / 2) * meta.halfUnits;
+                        const cx = rx + card.startHalf * (slotW / 2);
+                        const cy = ry;
+
+                        // Fondo blanco de la carta
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(cx + 2, cy + 2, cw - 4, rowH - 4);
+
+                        // Borde discontinuo de la carta
+                        ctx.save();
+                        ctx.setLineDash([5, 4]);
+                        ctx.strokeStyle = '#94a3b8';
+                        ctx.lineWidth = 1.5;
+                        drawRoundedRect(ctx, cx + 2, cy + 2, cw - 4, rowH - 4, 14);
+                        ctx.stroke();
+                        ctx.restore();
+
+                        // Forma de color central
+                        let shapeW = 30 * pxPerMm;
+                        const shapeH = 30 * pxPerMm;
+                        if (card.dur === 0.5) shapeW = 15.5 * pxPerMm;
+                        else if (card.dur === 2) shapeW = 72 * pxPerMm;
+                        else if (card.dur === 4) shapeW = 160 * pxPerMm;
+
+                        const sx = cx + (cw - shapeW) / 2;
+                        const sy = cy + (rowH - shapeH) / 2;
+
+                        drawRoundedRect(ctx, sx, sy, shapeW, shapeH, shapeH / 2);
+                        ctx.fillStyle = note.color;
+                        ctx.fill();
+
+                        if (note.isRest || card.dur === 0.5) {
+                            ctx.save();
+                            ctx.setLineDash([6, 4]);
+                            ctx.strokeStyle = note.isRest ? '#94a3b8' : 'rgba(0,0,0,0.3)';
+                            ctx.lineWidth = 2.5;
+                            ctx.stroke();
+                            ctx.restore();
+                        }
+
+                        // Etiqueta central
+                        ctx.fillStyle = note.textColor;
+                        ctx.font = `900 ${card.dur === 0.5 ? 24 : 34}px sans-serif`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        const symbol = note.isRest ? meta.restSymbol : meta.symbol;
+                        ctx.fillText(note.isRest ? symbol : note.name, cx + cw / 2, cy + rowH / 2 + 2);
+                    });
+                }
+
+                const filename = `Prueba_Tablero_${beatsPerMeasure}x${numRows}.jpg`;
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+
+                const previewImg = document.getElementById('photoPreviewImg');
+                const dlLink = document.getElementById('photoDownloadLink');
+                const modal = document.getElementById('photoModal');
+
+                previewImg.src = dataUrl;
+                dlLink.download = filename;
+
+                // Usar Blob para una descarga JPG fiable en todos los navegadores
+                canvas.toBlob((blob) => {
+                    if (lastBlobUrl) URL.revokeObjectURL(lastBlobUrl);
+                    if (blob) {
+                        lastBlobUrl = URL.createObjectURL(blob);
+                        dlLink.href = lastBlobUrl;
+                    } else {
+                        dlLink.href = dataUrl;
+                    }
+
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                    dlLink.click();
+                }, 'image/jpeg', 0.95);
+            } catch (err) {
+                showToast('Error al generar el JPG: ' + err.message);
+            }
+        }
+
+        window.onload = () => {
+            updateDurationButtons();
+            renderTray();
+            renderBoard();
+        };
+    </script>
+</body>
+</html>

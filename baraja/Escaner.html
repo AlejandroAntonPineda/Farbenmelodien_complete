@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foto a Melodía — Farbmelodien</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+
+        /* Modo pantalla completa real con CSS nativo */
+        #viewportWrap.viewport-expanded {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            height: 100dvh !important;
+            aspect-ratio: auto !important;
+            border-radius: 0 !important;
+            z-index: 9999 !important;
+            background-color: #020617 !important;
+        }
+    </style>
+</head>
+<body class="flex min-h-screen flex-col items-center justify-center p-4">
+
+    <!-- Aviso flotante -->
+    <div id="toast" class="fixed bottom-5 left-1/2 z-[10000] hidden -translate-x-1/2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-bold text-white shadow-xl"></div>
+
+    <!-- Tarjeta principal minimalista -->
+    <main class="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-5 shadow-lg">
+
+        <!-- Título y ajuste mínimo (compás, filas y ampliar) -->
+        <div class="mb-4 flex items-center justify-between gap-2">
+            <h1 class="text-lg font-extrabold tracking-tight text-slate-900">🎵 Farbmelodien</h1>
+            <div class="flex items-center gap-1.5">
+                <button id="btnBeats" onclick="toggleBeats()" class="rounded-full bg-slate-100 px-3 py-1 text-xs font-extrabold text-slate-700 transition hover:bg-slate-200" title="Cambiar compás">
+                    4/4
+                </button>
+                <button id="btnRows" onclick="cycleRows()" class="rounded-full bg-slate-100 px-3 py-1 text-xs font-extrabold text-slate-700 transition hover:bg-slate-200" title="Número de filas de cartas">
+                    1 fila
+                </button>
+                <button id="btnExpandTop" onclick="toggleExpand()" class="rounded-full bg-blue-100 px-3 py-1 text-xs font-extrabold text-blue-700 transition hover:bg-blue-200" title="Ampliar ventana">
+                    ⛶ Ampliar
+                </button>
+            </div>
+        </div>
+
+        <!-- Visor único (cámara en vivo o foto tomada) -->
+        <div id="viewportWrap" class="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-slate-900">
+            <video id="video" autoplay playsinline muted class="h-full w-full object-cover"></video>
+            <img id="photoPreview" alt="Foto de cartas" class="hidden h-full w-full object-contain bg-slate-900">
+            <canvas id="overlayCanvas" style="touch-action: none;" class="pointer-events-none absolute inset-0 h-full w-full"></canvas>
+
+            <!-- Botón siempre visible para ampliar la zona de la rejilla -->
+            <button id="btnExpand" onclick="toggleExpand()" class="absolute right-3 top-3 z-20 rounded-full bg-slate-900/85 px-3.5 py-2 text-xs font-extrabold text-white shadow-lg backdrop-blur-sm transition hover:bg-slate-900 active:scale-95">
+                ⛶ Ampliar
+            </button>
+
+            <!-- Barra flotante visible solo en modo pantalla completa -->
+            <div id="expandedBar" style="display: none;" class="absolute inset-x-0 top-0 z-20 items-center justify-between gap-2 bg-gradient-to-b from-slate-950/90 to-transparent p-4">
+                <div class="flex items-center gap-2">
+                    <button id="btnBeatsFs" onclick="toggleBeats()" class="rounded-full bg-white/15 px-3.5 py-2 text-xs font-extrabold text-white backdrop-blur-sm transition hover:bg-white/25 active:scale-95">
+                        4/4
+                    </button>
+                    <button id="btnRowsFs" onclick="cycleRows()" class="rounded-full bg-white/15 px-3.5 py-2 text-xs font-extrabold text-white backdrop-blur-sm transition hover:bg-white/25 active:scale-95">
+                        1 fila
+                    </button>
+                </div>
+                <button onclick="setExpanded(false)" class="rounded-full bg-emerald-600 px-4 py-2 text-sm font-extrabold text-white shadow-lg transition hover:bg-emerald-700 active:scale-95">
+                    ✓ Listo
+                </button>
+            </div>
+
+            <!-- Mensaje si la cámara aún no está activa -->
+            <div id="cameraFallback" class="hidden absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white">
+                <div class="mb-2 text-4xl">📷</div>
+                <p class="text-sm font-bold">Pulsa el botón para hacer una foto a tus cartas</p>
+            </div>
+        </div>
+
+        <!-- ESTADO 1: Controles para hacer la foto -->
+        <div id="captureControls" class="mt-4 flex flex-col gap-2.5">
+            <button id="btnSnap" onclick="takePhoto()" class="w-full rounded-2xl bg-blue-600 py-4 text-base font-extrabold text-white shadow-md transition hover:bg-blue-700 active:scale-[0.98]">
+                📷 Hacer foto
+            </button>
+
+            <!-- Entrada nativa (cámara del móvil o galería) -->
+            <label class="cursor-pointer py-1.5 text-center text-xs font-bold text-slate-500 transition hover:text-slate-800">
+                o subir una foto desde el dispositivo
+                <input type="file" id="fileInput" accept="image/*" capture="environment" class="hidden" onchange="handleUploadedPhoto(event)">
+            </label>
+        </div>
+
+        <!-- ESTADO 2: Resultado de la foto + envío directo al programa -->
+        <div id="resultControls" class="mt-4 hidden flex-col gap-3">
+            <button onclick="setExpanded(true)" class="w-full rounded-2xl border border-blue-200 bg-blue-50 py-3 text-sm font-extrabold text-blue-700 transition hover:bg-blue-100 active:scale-[0.98]">
+                ⛶ Ampliar foto para ajustar la rejilla
+            </button>
+
+            <p class="text-center text-xs font-bold text-slate-500">👆 Arrastra las esquinas, los bordes o pellizca con dos dedos</p>
+
+            <!-- Vista previa limpia de las notas detectadas -->
+            <div id="notesPreview" class="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3"></div>
+            <p class="text-center text-[11px] font-medium text-slate-400">Toca cualquier nota roja para cambiar entre <strong>C</strong> y <strong>C⬆</strong></p>
+
+            <button onclick="sendToNotation()" class="w-full rounded-2xl bg-emerald-600 py-4 text-base font-extrabold text-white shadow-md transition hover:bg-emerald-700 active:scale-[0.98]">
+                🎹 Abrir melodía en Notación ↗
+            </button>
+
+            <button onclick="resetScanner()" class="w-full rounded-2xl border border-slate-200 bg-white py-3 text-sm font-bold text-slate-600 transition hover:bg-slate-50">
+                🔄 Hacer otra foto
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Canvas oculto para leer los píxeles de la foto -->
+    <canvas id="sampleCanvas" class="hidden"></canvas>
+
+    <script>
+        // ==========================================================
+        // 1. CONFIGURACIÓN DE COLORES DE FARBMELODIEN
+        // ==========================================================
+        const NOTATION_FILE = 'notation.html';
+
+        const NOTES = [
+            { id: 'C',  name: 'C',  color: '#ff3333', text: '#ffffff' },
+            { id: 'D',  name: 'D',  color: '#ff8c00', text: '#ffffff' },
+            { id: 'E',  name: 'E',  color: '#ffd700', text: '#0f172a' },
+            { id: 'F',  name: 'F',  color: '#a2ff33', text: '#0f172a' },
+            { id: 'G',  name: 'G',  color: '#00c853', text: '#ffffff' },
+            { id: 'A',  name: 'A',  color: '#1a1aff', text: '#ffffff' },
+            { id: 'H',  name: 'H',  color: '#ff33cc', text: '#ffffff' },
+            { id: 'C2', name: 'C⬆', color: '#ff3333', text: '#ffffff' }
+        ];
+
+        const BOX_SCALE = 0.88;
+        const SAT_THRESHOLD = 0.25;
+        const MIN_GRID_W = 0.12;
+        const MIN_GRID_H = 0.06;
+
+        let beatsPerMeasure = 4;
+        let scanRows = 1;
+        let stream = null;
+        let cameraReady = false;
+        let mode = 'camera'; // 'camera' | 'result'
+        let detectedMeasures = [];
+        let animId = null;
+        let rowRects = []; // Un recuadro independiente { x, y, w, h } por cada fila
+        let activeRowIndex = 0; // Fila seleccionada actualmente para editar
+        let photoBox = null; // Área real de la foto dentro del visor (para mantener la rejilla al ampliar)
+        let isExpanded = false;
+        let cachedImgData = null;
+        let dragState = null;
+        let pendingDragFrame = false;
+        const activePointers = new Map();
+
+        const videoEl = document.getElementById('video');
+        const photoEl = document.getElementById('photoPreview');
+        const overlayCanvas = document.getElementById('overlayCanvas');
+        const overlayCtx = overlayCanvas.getContext('2d');
+        const sampleCanvas = document.getElementById('sampleCanvas');
+        const sampleCtx = sampleCanvas.getContext('2d', { willReadFrequently: true });
+
+        // ==========================================================
+        // 2. UTILIDADES DE INTERFAZ Y PANTALLA COMPLETA
+        // ==========================================================
+        let toastTimer = null;
+        function showToast(msg) {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.classList.remove('hidden');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => el.classList.add('hidden'), 2600);
+        }
+
+        function syncCanvasSize() {
+            const rect = document.getElementById('viewportWrap').getBoundingClientRect();
+            overlayCanvas.width = Math.max(320, Math.round(rect.width));
+            overlayCanvas.height = Math.max(240, Math.round(rect.height));
+        }
+
+        function toggleBeats() {
+            beatsPerMeasure = beatsPerMeasure === 4 ? 3 : 4;
+            const label = `${beatsPerMeasure}/4`;
+            document.getElementById('btnBeats').textContent = label;
+            document.getElementById('btnBeatsFs').textContent = label;
+            if (mode === 'result') analyzeCurrentPhoto();
+            else drawLiveGuide();
+        }
+
+        function cycleRows() {
+            scanRows = (scanRows % 4) + 1;
+            const label = scanRows === 1 ? '1 fila' : `${scanRows} filas`;
+            document.getElementById('btnRows').textContent = label;
+            document.getElementById('btnRowsFs').textContent = label;
+            if (mode === 'result') {
+                syncRowRectsCount();
+                analyzeCurrentPhoto();
+            } else {
+                drawLiveGuide();
+            }
+        }
+
+        function getPhotoRelativeGrid() {
+            if (!rowRects.length || !photoBox || !photoBox.w || !photoBox.h) return null;
+            return rowRects.map(r => ({
+                x: (r.x - photoBox.x) / photoBox.w,
+                y: (r.y - photoBox.y) / photoBox.h,
+                w: r.w / photoBox.w,
+                h: r.h / photoBox.h
+            }));
+        }
+
+        function restoreGridFromPhotoRelative(relList) {
+            if (!Array.isArray(relList) || !photoBox) return;
+            rowRects = relList.map(rel => {
+                const nw = Math.max(MIN_GRID_W, Math.min(1, rel.w * photoBox.w));
+                const nh = Math.max(MIN_GRID_H, Math.min(1, rel.h * photoBox.h));
+                const nx = Math.max(0, Math.min(1 - nw, photoBox.x + rel.x * photoBox.w));
+                const ny = Math.max(0, Math.min(1 - nh, photoBox.y + rel.y * photoBox.h));
+                return { x: nx, y: ny, w: nw, h: nh };
+            });
+            if (activeRowIndex >= rowRects.length) activeRowIndex = Math.max(0, rowRects.length - 1);
+        }
+
+        function toggleExpand() {
+            setExpanded(!isExpanded);
+        }
+
+        function setExpanded(expand) {
+            if (isExpanded === expand) return;
+            const rel = mode === 'result' ? getPhotoRelativeGrid() : null;
+            isExpanded = expand;
+
+            const wrap = document.getElementById('viewportWrap');
+            const btn = document.getElementById('btnExpand');
+            const bar = document.getElementById('expandedBar');
+
+            if (isExpanded) {
+                wrap.classList.add('viewport-expanded');
+                btn.style.display = 'none';
+                bar.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            } else {
+                wrap.classList.remove('viewport-expanded');
+                bar.style.display = 'none';
+                btn.style.display = '';
+                document.body.style.overflow = '';
+            }
+
+            const refreshAfterLayout = () => {
+                syncCanvasSize();
+                if (mode === 'result') {
+                    preparePhotoCanvas(photoEl);
+                    restoreGridFromPhotoRelative(rel);
+                    analyzeCurrentPhoto();
+                } else {
+                    drawLiveGuide();
+                }
+            };
+
+            requestAnimationFrame(() => {
+                requestAnimationFrame(refreshAfterLayout);
+            });
+        }
+
+        // ==========================================================
+        // 3. CÁMARA Y CAPTURA DE FOTO
+        // ==========================================================
+        async function initCamera() {
+            try {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('Camera API unavailable');
+                }
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } },
+                    audio: false
+                });
+                videoEl.srcObject = stream;
+                await videoEl.play();
+                cameraReady = true;
+                videoEl.classList.remove('hidden');
+                document.getElementById('cameraFallback').classList.add('hidden');
+                syncCanvasSize();
+                loopGuide();
+            } catch (err) {
+                cameraReady = false;
+                videoEl.classList.add('hidden');
+                document.getElementById('cameraFallback').classList.remove('hidden');
+                syncCanvasSize();
+                drawLiveGuide();
+            }
+        }
+
+        function stopCamera() {
+            if (animId) {
+                cancelAnimationFrame(animId);
+                animId = null;
+            }
+            if (stream) {
+                stream.getTracks().forEach(t => t.stop());
+                stream = null;
+            }
+            cameraReady = false;
+        }
+
+        function loopGuide() {
+            if (mode !== 'camera' || !cameraReady) return;
+            drawLiveGuide();
+            animId = requestAnimationFrame(loopGuide);
+        }
+
+        function takePhoto() {
+            if (!cameraReady || videoEl.videoWidth === 0) {
+                document.getElementById('fileInput').click();
+                return;
+            }
+
+            const W = overlayCanvas.width;
+            const H = overlayCanvas.height;
+            sampleCanvas.width = W;
+            sampleCanvas.height = H;
+
+            const sw = videoEl.videoWidth;
+            const sh = videoEl.videoHeight;
+            const scale = Math.max(W / sw, H / sh);
+            const dw = sw * scale;
+            const dh = sh * scale;
+
+            sampleCtx.fillStyle = '#000';
+            sampleCtx.fillRect(0, 0, W, H);
+            sampleCtx.drawImage(videoEl, (W - dw) / 2, (H - dh) / 2, dw, dh);
+
+            const dataUrl = sampleCanvas.toDataURL('image/jpeg', 0.92);
+            stopCamera();
+            showPhotoResult(dataUrl);
+        }
+
+        function handleUploadedPhoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                stopCamera();
+                showPhotoResult(e.target.result);
+            };
+            reader.readAsDataURL(file);
+            event.target.value = '';
+        }
+
+        function showPhotoResult(dataUrl) {
+            mode = 'result';
+            rowRects = [];
+            activeRowIndex = 0;
+            photoBox = null;
+            photoEl.onload = () => {
+                videoEl.classList.add('hidden');
+                document.getElementById('cameraFallback').classList.add('hidden');
+                photoEl.classList.remove('hidden');
+                overlayCanvas.classList.remove('pointer-events-none');
+                overlayCanvas.classList.add('cursor-move');
+                document.getElementById('captureControls').classList.add('hidden');
+                document.getElementById('resultControls').classList.remove('hidden');
+                document.getElementById('resultControls').classList.add('flex');
+                syncCanvasSize();
+                preparePhotoCanvas(photoEl);
+                initDefaultRowRects();
+                analyzeCurrentPhoto();
+            };
+            photoEl.src = dataUrl;
+        }
+
+        function resetScanner() {
+            if (isExpanded) setExpanded(false);
+            mode = 'camera';
+            detectedMeasures = [];
+            rowRects = [];
+            activeRowIndex = 0;
+            photoBox = null;
+            cachedImgData = null;
+            dragState = null;
+            activePointers.clear();
+            overlayCanvas.classList.add('pointer-events-none');
+            overlayCanvas.classList.remove('cursor-move');
+            photoEl.classList.add('hidden');
+            photoEl.src = '';
+            document.getElementById('resultControls').classList.add('hidden');
+            document.getElementById('resultControls').classList.remove('flex');
+            document.getElementById('captureControls').classList.remove('hidden');
+            initCamera();
+        }
+
+        // ==========================================================
+        // 4. ANÁLISIS DE COLORES, CUADRÍCULA AJUSTABLE Y DURACIONES
+        // ==========================================================
+        function getDefaultLayout(W, H) {
+            const boxW = W * BOX_SCALE;
+            const maxBoxH = H * 0.84;
+            const idealRowH = (boxW / beatsPerMeasure) * (64 / 44);
+            const rowGap = scanRows > 1 ? Math.min(12, H * 0.025) : 0;
+            let totalH = idealRowH * scanRows + rowGap * (scanRows - 1);
+            let actualBoxW = boxW;
+            let rowH = idealRowH;
+
+            if (totalH > maxBoxH) {
+                const f = maxBoxH / totalH;
+                rowH *= f;
+                actualBoxW *= f;
+                totalH = maxBoxH;
+            }
+
+            const startX = (W - actualBoxW) / 2;
+            const startY = (H - totalH) / 2;
+            const beatW = actualBoxW / beatsPerMeasure;
+            return { startX, startY, actualBoxW, totalH, rowH, rowGap, beatW };
+        }
+
+        function initDefaultRowRects() {
+            const W = overlayCanvas.width;
+            const H = overlayCanvas.height;
+            const L = getDefaultLayout(W, H);
+            rowRects = [];
+            for (let r = 0; r < scanRows; r++) {
+                const ry = L.startY + r * (L.rowH + L.rowGap);
+                rowRects.push({
+                    x: L.startX / W,
+                    y: ry / H,
+                    w: L.actualBoxW / W,
+                    h: L.rowH / H
+                });
+            }
+            activeRowIndex = 0;
+        }
+
+        // Añade o quita filas manteniendo la posición exacta de las que ya ajustaste
+        function syncRowRectsCount() {
+            if (rowRects.length === 0) {
+                initDefaultRowRects();
+                return;
+            }
+            while (rowRects.length < scanRows) {
+                const last = rowRects[rowRects.length - 1];
+                const gap = 0.025;
+                let ny = last.y + last.h + gap;
+                if (ny + last.h > 0.98) ny = Math.max(0.02, last.y - last.h - gap);
+                if (ny + last.h > 0.98) ny = Math.max(0.02, 1 - last.h - 0.02);
+                rowRects.push({ x: last.x, y: ny, w: last.w, h: last.h });
+            }
+            if (rowRects.length > scanRows) {
+                rowRects = rowRects.slice(0, scanRows);
+            }
+            activeRowIndex = Math.min(activeRowIndex, rowRects.length - 1);
+        }
+
+        function getRowBoxes(W, H) {
+            if (mode === 'result' && rowRects.length > 0) {
+                return rowRects.map(r => ({
+                    x: r.x * W,
+                    y: r.y * H,
+                    w: r.w * W,
+                    h: r.h * H,
+                    beatW: (r.w * W) / beatsPerMeasure
+                }));
+            }
+            const L = getDefaultLayout(W, H);
+            const boxes = [];
+            for (let r = 0; r < scanRows; r++) {
+                boxes.push({
+                    x: L.startX,
+                    y: L.startY + r * (L.rowH + L.rowGap),
+                    w: L.actualBoxW,
+                    h: L.rowH,
+                    beatW: L.beatW
+                });
+            }
+            return boxes;
+        }
+
+        function drawLiveGuide() {
+            const W = overlayCanvas.width;
+            const H = overlayCanvas.height;
+            overlayCtx.clearRect(0, 0, W, H);
+
+            const boxes = getRowBoxes(W, H);
+
+            // Oscurecer ligeramente la zona fuera de las filas
+            overlayCtx.fillStyle = 'rgba(15, 23, 42, 0.35)';
+            overlayCtx.fillRect(0, 0, W, H);
+            boxes.forEach(box => overlayCtx.clearRect(box.x, box.y, box.w, box.h));
+
+            // Dibujar cada fila de forma independiente
+            boxes.forEach((box, r) => {
+                const isActive = (mode === 'result' && r === activeRowIndex);
+
+                overlayCtx.strokeStyle = isActive
+                    ? '#3b82f6'
+                    : (mode === 'result' ? 'rgba(255, 255, 255, 0.75)' : 'rgba(255, 255, 255, 0.9)');
+                overlayCtx.lineWidth = isActive ? 3 : 2;
+                overlayCtx.strokeRect(box.x, box.y, box.w, box.h);
+
+                for (let b = 0; b < beatsPerMeasure; b++) {
+                    const bx = box.x + b * box.beatW;
+
+                    if (b > 0) {
+                        overlayCtx.beginPath();
+                        overlayCtx.setLineDash([6, 4]);
+                        overlayCtx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                        overlayCtx.lineWidth = 1.5;
+                        overlayCtx.moveTo(bx, box.y);
+                        overlayCtx.lineTo(bx, box.y + box.h);
+                        overlayCtx.stroke();
+                        overlayCtx.setLineDash([]);
+                    }
+
+                    overlayCtx.beginPath();
+                    overlayCtx.setLineDash([2, 4]);
+                    overlayCtx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+                    overlayCtx.lineWidth = 1;
+                    overlayCtx.moveTo(bx + box.beatW / 2, box.y + 6);
+                    overlayCtx.lineTo(bx + box.beatW / 2, box.y + box.h - 6);
+                    overlayCtx.stroke();
+                    overlayCtx.setLineDash([]);
+                }
+
+                // Etiqueta de número de fila cuando hay más de una
+                if (mode === 'result' && boxes.length > 1) {
+                    const badgeW = 22;
+                    const badgeH = 22;
+                    overlayCtx.fillStyle = isActive ? '#2563eb' : 'rgba(15, 23, 42, 0.75)';
+                    overlayCtx.beginPath();
+                    if (typeof overlayCtx.roundRect === 'function') {
+                        overlayCtx.roundRect(box.x + 4, box.y + box.h - badgeH - 4, badgeW, badgeH, 6);
+                    } else {
+                        overlayCtx.rect(box.x + 4, box.y + box.h - badgeH - 4, badgeW, badgeH);
+                    }
+                    overlayCtx.fill();
+                    overlayCtx.fillStyle = '#ffffff';
+                    overlayCtx.font = 'bold 11px Inter, sans-serif';
+                    overlayCtx.textAlign = 'center';
+                    overlayCtx.textBaseline = 'middle';
+                    overlayCtx.fillText(String(r + 1), box.x + 4 + badgeW / 2, box.y + box.h - badgeH / 2 - 4);
+                }
+            });
+
+            // Dibujar tiradores de ajuste sobre la fila seleccionada actualmente
+            if (mode === 'result' && boxes[activeRowIndex]) {
+                const box = boxes[activeRowIndex];
+                const x1 = box.x;
+                const y1 = box.y;
+                const x2 = box.x + box.w;
+                const y2 = box.y + box.h;
+                const mx = (x1 + x2) / 2;
+                const my = (y1 + y2) / 2;
+                const activeType = dragState ? dragState.type : null;
+
+                const edges = [
+                    { id: 't', x: mx, y: y1, w: 28, h: 9 },
+                    { id: 'b', x: mx, y: y2, w: 28, h: 9 },
+                    { id: 'l', x: x1, y: my, w: 9, h: 28 },
+                    { id: 'r', x: x2, y: my, w: 9, h: 28 }
+                ];
+                edges.forEach(ed => {
+                    overlayCtx.beginPath();
+                    const rx = ed.x - ed.w / 2;
+                    const ry = ed.y - ed.h / 2;
+                    if (typeof overlayCtx.roundRect === 'function') {
+                        overlayCtx.roundRect(rx, ry, ed.w, ed.h, 99);
+                    } else {
+                        overlayCtx.rect(rx, ry, ed.w, ed.h);
+                    }
+                    overlayCtx.fillStyle = activeType === ed.id ? '#10b981' : '#ffffff';
+                    overlayCtx.fill();
+                    overlayCtx.lineWidth = 2.5;
+                    overlayCtx.strokeStyle = activeType === ed.id ? '#ffffff' : '#2563eb';
+                    overlayCtx.stroke();
+                });
+
+                const corners = [
+                    { id: 'tl', x: x1, y: y1 },
+                    { id: 'tr', x: x2, y: y1 },
+                    { id: 'bl', x: x1, y: y2 },
+                    { id: 'br', x: x2, y: y2 }
+                ];
+                corners.forEach(pt => {
+                    overlayCtx.beginPath();
+                    overlayCtx.arc(pt.x, pt.y, 12, 0, Math.PI * 2);
+                    overlayCtx.fillStyle = activeType === pt.id ? '#10b981' : '#ffffff';
+                    overlayCtx.fill();
+                    overlayCtx.lineWidth = 3;
+                    overlayCtx.strokeStyle = activeType === pt.id ? '#ffffff' : '#2563eb';
+                    overlayCtx.stroke();
+                });
+            }
+        }
+
+        // Eventos táctiles y de ratón para seleccionar, mover y redimensionar cada fila por separado
+        function getCanvasCoords(e) {
+            const rect = overlayCanvas.getBoundingClientRect();
+            return {
+                x: (e.clientX - rect.left) * (overlayCanvas.width / rect.width),
+                y: (e.clientY - rect.top) * (overlayCanvas.height / rect.height)
+            };
+        }
+
+        function hitTestRowHandles(rect, pt, W, H) {
+            const x1 = rect.x * W;
+            const y1 = rect.y * H;
+            const x2 = (rect.x + rect.w) * W;
+            const y2 = (rect.y + rect.h) * H;
+            const cornerHit = 40;
+            const edgeHit = 24;
+            const dist = (ax, ay) => Math.hypot(pt.x - ax, pt.y - ay);
+
+            if (dist(x1, y1) <= cornerHit) return 'tl';
+            if (dist(x2, y1) <= cornerHit) return 'tr';
+            if (dist(x1, y2) <= cornerHit) return 'bl';
+            if (dist(x2, y2) <= cornerHit) return 'br';
+            if (Math.abs(pt.y - y1) <= edgeHit && pt.x >= x1 && pt.x <= x2) return 't';
+            if (Math.abs(pt.y - y2) <= edgeHit && pt.x >= x1 && pt.x <= x2) return 'b';
+            if (Math.abs(pt.x - x1) <= edgeHit && pt.y >= y1 && pt.y <= y2) return 'l';
+            if (Math.abs(pt.x - x2) <= edgeHit && pt.y >= y1 && pt.y <= y2) return 'r';
+            return null;
+        }
+
+        overlayCanvas.addEventListener('pointerdown', (e) => {
+            if (mode !== 'result' || rowRects.length === 0) return;
+            e.preventDefault();
+            overlayCanvas.setPointerCapture(e.pointerId);
+
+            const W = overlayCanvas.width;
+            const H = overlayCanvas.height;
+            const pt = getCanvasCoords(e);
+            activePointers.set(e.pointerId, pt);
+
+            // 2 dedos: pellizco sobre la fila seleccionada
+            if (activePointers.size === 2 && rowRects[activeRowIndex]) {
+                const pts = Array.from(activePointers.values());
+                const dist0 = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+                dragState = {
+                    type: 'pinch',
+                    rowIndex: activeRowIndex,
+                    dist0: Math.max(20, dist0),
+                    orig: { ...rowRects[activeRowIndex] }
+                };
+                return;
+            }
+
+            if (activePointers.size > 2) return;
+
+            // 1. Comprobar primero si se toca un tirador de la fila activa
+            let targetRow = activeRowIndex;
+            let type = rowRects[activeRowIndex]
+                ? hitTestRowHandles(rowRects[activeRowIndex], pt, W, H)
+                : null;
+
+            // 2. Si no es un tirador, comprobar si se toca dentro de alguna fila para seleccionarla y moverla
+            if (!type) {
+                const order = [activeRowIndex, ...rowRects.map((_, i) => i).filter(i => i !== activeRowIndex)];
+                for (const idx of order) {
+                    const r = rowRects[idx];
+                    if (pt.x >= r.x * W && pt.x <= (r.x + r.w) * W && pt.y >= r.y * H && pt.y <= (r.y + r.h) * H) {
+                        targetRow = idx;
+                        type = 'move';
+                        break;
+                    }
+                }
+            }
+
+            if (!type) return;
+            activeRowIndex = targetRow;
+            dragState = {
+                type,
+                rowIndex: targetRow,
+                startX: pt.x / W,
+                startY: pt.y / H,
+                orig: { ...rowRects[targetRow] }
+            };
+            analyzeCurrentPhoto();
+        });
+
+        overlayCanvas.addEventListener('pointermove', (e) => {
+            if (mode !== 'result' || !activePointers.has(e.pointerId)) return;
+            e.preventDefault();
+
+            const W = overlayCanvas.width;
+            const H = overlayCanvas.height;
+            const pt = getCanvasCoords(e);
+            activePointers.set(e.pointerId, pt);
+
+            if (!dragState) return;
+
+            const o = dragState.orig;
+            let nx = o.x, ny = o.y, nw = o.w, nh = o.h;
+
+            if (dragState.type === 'pinch' && activePointers.size === 2) {
+                const pts = Array.from(activePointers.values());
+                const dist1 = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+                const scale = dist1 / dragState.dist0;
+                const cx = o.x + o.w / 2;
+                const cy = o.y + o.h / 2;
+
+                nw = Math.max(MIN_GRID_W, Math.min(1, o.w * scale));
+                nh = Math.max(MIN_GRID_H, Math.min(1, o.h * scale));
+                nx = Math.max(0, Math.min(1 - nw, cx - nw / 2));
+                ny = Math.max(0, Math.min(1 - nh, cy - nh / 2));
+            } else if (dragState.type === 'move') {
+                const dx = pt.x / W - dragState.startX;
+                const dy = pt.y / H - dragState.startY;
+                nx = Math.max(0, Math.min(1 - o.w, o.x + dx));
+                ny = Math.max(0, Math.min(1 - o.h, o.y + dy));
+            } else if (dragState.type !== 'pinch') {
+                const dx = pt.x / W - dragState.startX;
+                const dy = pt.y / H - dragState.startY;
+                const right = o.x + o.w;
+                const bottom = o.y + o.h;
+
+                if (dragState.type === 'tl' || dragState.type === 'bl' || dragState.type === 'l') {
+                    nx = Math.max(0, Math.min(right - MIN_GRID_W, o.x + dx));
+                    nw = right - nx;
+                }
+                if (dragState.type === 'tr' || dragState.type === 'br' || dragState.type === 'r') {
+                    nw = Math.max(MIN_GRID_W, Math.min(1 - o.x, o.w + dx));
+                }
+                if (dragState.type === 'tl' || dragState.type === 'tr' || dragState.type === 't') {
+                    ny = Math.max(0, Math.min(bottom - MIN_GRID_H, o.y + dy));
+                    nh = bottom - ny;
+                }
+                if (dragState.type === 'bl' || dragState.type === 'br' || dragState.type === 'b') {
+                    nh = Math.max(MIN_GRID_H, Math.min(1 - o.y, o.h + dy));
+                }
+            }
+
+            rowRects[dragState.rowIndex] = { x: nx, y: ny, w: nw, h: nh };
+
+            if (!pendingDragFrame) {
+                pendingDragFrame = true;
+                requestAnimationFrame(() => {
+                    pendingDragFrame = false;
+                    analyzeCurrentPhoto();
+                });
+            }
+        });
+
+        function endDrag(e) {
+            activePointers.delete(e.pointerId);
+            try { overlayCanvas.releasePointerCapture(e.pointerId); } catch (_) {}
+            if (activePointers.size < 2 && dragState && dragState.type === 'pinch') {
+                dragState = null;
+                analyzeCurrentPhoto();
+            } else if (activePointers.size === 0 && dragState) {
+                dragState = null;
+                analyzeCurrentPhoto();
+            }
+        }
+        overlayCanvas.addEventListener('pointerup', endDrag);
+        overlayCanvas.addEventListener('pointercancel', endDrag);
+
+        function preparePhotoCanvas(img) {
+            const W = overlayCanvas.width;
+            const H = overlayCanvas.height;
+            sampleCanvas.width = W;
+            sampleCanvas.height = H;
+            sampleCtx.fillStyle = '#000';
+            sampleCtx.fillRect(0, 0, W, H);
+
+            const sw = img.naturalWidth;
+            const sh = img.naturalHeight;
+            if (!sw || !sh) {
+                cachedImgData = null;
+                photoBox = null;
+                return;
+            }
+
+            const scale = Math.min(W / sw, H / sh);
+            const dw = sw * scale;
+            const dh = sh * scale;
+            const dx = (W - dw) / 2;
+            const dy = (H - dh) / 2;
+
+            photoBox = { x: dx / W, y: dy / H, w: dw / W, h: dh / H };
+            sampleCtx.drawImage(img, dx, dy, dw, dh);
+            cachedImgData = sampleCtx.getImageData(0, 0, W, H);
+        }
+
+        function analyzeCurrentPhoto() {
+            if (!cachedImgData) return;
+            const W = overlayCanvas.width;
+            const H = overlayCanvas.height;
+            const boxes = getRowBoxes(W, H);
+
+            drawLiveGuide();
+            detectedMeasures = [];
+
+            for (let r = 0; r < boxes.length; r++) {
+                const box = boxes[r];
+                const rawBeats = [];
+                const bridges = [];
+
+                for (let b = 0; b < beatsPerMeasure; b++) {
+                    const bx = box.x + b * box.beatW;
+                    const cy = box.y + box.h * 0.36;
+                    const ch = box.h * 0.28;
+
+                    rawBeats.push({
+                        leftNote:   sampleRegion(cachedImgData, W, H, bx + box.beatW * 0.14, cy, box.beatW * 0.22, ch),
+                        centerNote: sampleRegion(cachedImgData, W, H, bx + box.beatW * 0.44, cy, box.beatW * 0.12, ch),
+                        rightNote:  sampleRegion(cachedImgData, W, H, bx + box.beatW * 0.64, cy, box.beatW * 0.22, ch)
+                    });
+
+                    if (b < beatsPerMeasure - 1) {
+                        bridges.push(sampleRegion(cachedImgData, W, H, bx + box.beatW * 0.92, box.y + box.h * 0.40, box.beatW * 0.16, box.h * 0.20));
+                    }
+                }
+
+                const measure = reconstructMeasure(rawBeats, bridges, beatsPerMeasure);
+                detectedMeasures.push(measure);
+                drawDetectedLabels(box.x, box.y, box.beatW, measure);
+            }
+
+            renderNotesPreview();
+        }
+
+        // Convierte RGB [0..255] a HSV (H en grados 0..360, S y V en 0..1)
+        function rgbToHsv(r, g, b) {
+            r /= 255; g /= 255; b /= 255;
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            const d = max - min;
+            let h = 0;
+            if (d !== 0) {
+                if (max === r) h = ((g - b) / d) % 6;
+                else if (max === g) h = (b - r) / d + 2;
+                else h = (r - g) / d + 4;
+                h *= 60;
+                if (h < 0) h += 360;
+            }
+            const s = max === 0 ? 0 : d / max;
+            return { h, s, v: max };
+        }
+
+        // Clasifica un píxel RGB en una nota de la paleta Farbmelodien
+        function classifyRgb(r, g, b) {
+            const { h, s, v } = rgbToHsv(r, g, b);
+            if (s < SAT_THRESHOLD || v < 0.2) return null;
+
+            if (h >= 340 || h < 15) return 'C';
+            if (h >= 15 && h < 42)  return 'D';
+            if (h >= 42 && h < 68)  return 'E';
+            if (h >= 68 && h < 112) return 'F';
+            if (h >= 112 && h < 175) return 'G';
+            if (h >= 175 && h < 265) return 'A';
+            if (h >= 265 && h < 340) return 'H';
+            return null;
+        }
+
+        // Muestrea una región rectangular y devuelve el color dominante
+        function sampleRegion(imgData, W, H, rx, ry, rw, rh) {
+            const x0 = Math.max(0, Math.floor(rx));
+            const y0 = Math.max(0, Math.floor(ry));
+            const x1 = Math.min(W, Math.ceil(rx + rw));
+            const y1 = Math.min(H, Math.ceil(ry + rh));
+            const data = imgData.data;
+
+            const counts = {};
+            let totalPixels = 0;
+            let coloredPixels = 0;
+
+            for (let y = y0; y < y1; y += 2) {
+                for (let x = x0; x < x1; x += 2) {
+                    const idx = (y * W + x) * 4;
+                    totalPixels++;
+                    const noteId = classifyRgb(data[idx], data[idx + 1], data[idx + 2]);
+                    if (noteId) {
+                        counts[noteId] = (counts[noteId] || 0) + 1;
+                        coloredPixels++;
+                    }
+                }
+            }
+
+            if (totalPixels === 0 || coloredPixels / totalPixels < 0.15) return null;
+
+            let bestId = null;
+            let bestCount = 0;
+            for (const [id, count] of Object.entries(counts)) {
+                if (count > bestCount) {
+                    bestCount = count;
+                    bestId = id;
+                }
+            }
+            return bestId;
+        }
+
+        // Reconstruye un compás detectando corcheas (0.5), negras (1), blancas (2) y redondas (4)
+        function reconstructMeasure(rawBeats, bridges, totalBeats) {
+            const result = rawBeats.map(rb => {
+                const { leftNote, centerNote, rightNote } = rb;
+                const isEighthPair =
+                    (leftNote !== rightNote) ||
+                    (leftNote !== null && rightNote !== null && centerNote === null);
+
+                if (isEighthPair) {
+                    return {
+                        id: leftNote || 'null',
+                        id2: rightNote || 'null',
+                        dur: '0.5'
+                    };
+                }
+
+                const mainNote = centerNote || leftNote || rightNote || 'null';
+                return { id: mainNote, id2: 'null', dur: '1' };
+            });
+
+            // Comprobar redonda (4 tiempos) en compás 4/4
+            if (
+                totalBeats === 4 &&
+                result.every(b => b.dur === '1' && b.id !== 'null' && b.id === result[0].id) &&
+                bridges[0] === result[0].id &&
+                bridges[1] === result[0].id &&
+                bridges[2] === result[0].id
+            ) {
+                result[0].dur = '4';
+                result[1] = { id: 'tie', id2: 'null', dur: '1' };
+                result[2] = { id: 'tie', id2: 'null', dur: '1' };
+                result[3] = { id: 'tie', id2: 'null', dur: '1' };
+                return result;
+            }
+
+            // Comprobar blancas (2 tiempos) cuando dos pulsos consecutivos comparten color y puente
+            for (let b = 0; b < totalBeats - 1; b++) {
+                if (
+                    result[b].dur === '1' &&
+                    result[b + 1].dur === '1' &&
+                    result[b].id !== 'null' &&
+                    result[b].id === result[b + 1].id &&
+                    bridges[b] === result[b].id
+                ) {
+                    result[b].dur = '2';
+                    result[b + 1] = { id: 'tie', id2: 'null', dur: '1' };
+                    b++;
+                }
+            }
+
+            return result;
+        }
+
+        // Dibuja las etiquetas de notas detectadas sobre la cuadrícula en el canvas
+        function drawDetectedLabels(startX, y, beatW, measure) {
+            for (let i = 0; i < measure.length; i++) {
+                const item = measure[i];
+                if (item.id === 'tie') continue;
+
+                const dur = parseFloat(item.dur) || 1;
+                const span = dur >= 1 ? dur : 1;
+                const bx = startX + i * beatW;
+                const bw = beatW * span;
+
+                let label = '—';
+                let bg = '#64748b';
+
+                if (dur === 0.5) {
+                    const n1 = NOTES.find(n => n.id === item.id);
+                    const n2 = NOTES.find(n => n.id === item.id2);
+                    label = `${n1 ? n1.name : '—'}·${n2 ? n2.name : '—'}`;
+                    bg = n1 ? n1.color : (n2 ? n2.color : '#64748b');
+                } else if (item.id !== 'null') {
+                    const n = NOTES.find(x => x.id === item.id);
+                    label = n ? n.name : '—';
+                    bg = n ? n.color : '#64748b';
+                }
+
+                const pillH = 22;
+                const pillW = Math.min(bw - 6, Math.max(38, label.length * 9 + 14));
+                const px = bx + (bw - pillW) / 2;
+                const py = y + 6;
+
+                overlayCtx.fillStyle = bg;
+                overlayCtx.beginPath();
+                if (typeof overlayCtx.roundRect === 'function') {
+                    overlayCtx.roundRect(px, py, pillW, pillH, 99);
+                } else {
+                    overlayCtx.rect(px, py, pillW, pillH);
+                }
+                overlayCtx.fill();
+                overlayCtx.strokeStyle = '#ffffff';
+                overlayCtx.lineWidth = 1.5;
+                overlayCtx.stroke();
+
+                overlayCtx.fillStyle = (item.id === 'E' || item.id === 'F') ? '#0f172a' : '#ffffff';
+                overlayCtx.font = 'bold 11px Inter, sans-serif';
+                overlayCtx.textAlign = 'center';
+                overlayCtx.textBaseline = 'middle';
+                overlayCtx.fillText(label, px + pillW / 2, py + pillH / 2 + 0.5);
+            }
+        }
+
+        // ==========================================================
+        // 5. VISTA PREVIA SIMPLE Y ENVÍO DIRECTO A NOTATION_2.HTML
+        // ==========================================================
+        function renderNotesPreview() {
+            const wrap = document.getElementById('notesPreview');
+            wrap.innerHTML = '';
+
+            detectedMeasures.forEach(measure => {
+                const row = document.createElement('div');
+                row.className = 'grid gap-1.5';
+                row.style.gridTemplateColumns = `repeat(${beatsPerMeasure}, minmax(0, 1fr))`;
+
+                measure.forEach(beat => {
+                    if (beat.id === 'tie') return;
+                    const dur = parseFloat(beat.dur) || 1;
+                    const span = dur >= 1 ? dur : 1;
+
+                    const el = document.createElement('button');
+                    el.className = 'flex h-11 items-center justify-center overflow-hidden rounded-full border-2 text-xs font-extrabold shadow-sm transition active:scale-95';
+                    el.style.gridColumn = `span ${span} / span ${span}`;
+
+                    // Tocar una nota roja alterna entre C y C⬆
+                    el.onclick = () => {
+                        let changed = false;
+                        if (beat.id === 'C') { beat.id = 'C2'; changed = true; }
+                        else if (beat.id === 'C2') { beat.id = 'C'; changed = true; }
+                        if (dur === 0.5) {
+                            if (beat.id2 === 'C') { beat.id2 = 'C2'; changed = true; }
+                            else if (beat.id2 === 'C2') { beat.id2 = 'C'; changed = true; }
+                        }
+                        if (changed) renderNotesPreview();
+                    };
+
+                    if (dur === 0.5) {
+                        const n1 = NOTES.find(n => n.id === beat.id);
+                        const n2 = NOTES.find(n => n.id === beat.id2);
+                        el.style.background = `linear-gradient(90deg, ${n1 ? n1.color : '#e2e8f0'} 50%, ${n2 ? n2.color : '#e2e8f0'} 50%)`;
+                        el.style.borderColor = '#64748b';
+                        el.style.borderStyle = 'dashed';
+                        el.innerHTML = `
+                            <span class="flex-1 text-center" style="color:${n1 ? n1.text : '#64748b'}">${n1 ? n1.name : '—'}</span>
+                            <span class="flex-1 text-center" style="color:${n2 ? n2.text : '#64748b'}">${n2 ? n2.name : '—'}</span>
+                        `;
+                    } else if (beat.id !== 'null') {
+                        const n = NOTES.find(x => x.id === beat.id);
+                        el.style.backgroundColor = n ? n.color : '#e2e8f0';
+                        el.style.color = n ? n.text : '#64748b';
+                        el.style.borderColor = 'rgba(0,0,0,0.15)';
+                        el.textContent = n ? n.name : '—';
+                    } else {
+                        el.style.backgroundColor = '#e2e8f0';
+                        el.style.color = '#94a3b8';
+                        el.style.borderColor = '#cbd5e1';
+                        el.textContent = '—';
+                    }
+
+                    row.appendChild(el);
+                });
+
+                wrap.appendChild(row);
+            });
+        }
+
+        function encodeMelody(obj) {
+            const bytes = new TextEncoder().encode(JSON.stringify(obj));
+            let bin = '';
+            bytes.forEach(b => { bin += String.fromCharCode(b); });
+            return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+
+        function sendToNotation() {
+            const pattern = [];
+            detectedMeasures.forEach(m => {
+                m.forEach(b => {
+                    pattern.push({ id: String(b.id), id2: String(b.id2 || 'null'), dur: String(b.dur || '1') });
+                });
+            });
+
+            if (pattern.length === 0) {
+                showToast('No se detectaron notas en la foto.');
+                return;
+            }
+
+            const encoded = encodeMelody({ pattern, beats: beatsPerMeasure });
+            window.location.href = `${NOTATION_FILE}?melody=${encoded}`;
+        }
+
+        // Cerrar pantalla completa con Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && isExpanded) {
+                setExpanded(false);
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            const rel = mode === 'result' ? getPhotoRelativeGrid() : null;
+            syncCanvasSize();
+            if (mode === 'result') {
+                preparePhotoCanvas(photoEl);
+                restoreGridFromPhotoRelative(rel);
+                analyzeCurrentPhoto();
+            } else {
+                drawLiveGuide();
+            }
+        });
+
+        window.onload = () => {
+            syncCanvasSize();
+            initCamera();
+        };
+    </script>
+</body>
+</html>
