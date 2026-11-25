@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Baraja Imprimible - Farbmelodien</title>
+    <title>Druckbares Kartenspiel - Farbmelodien</title>
     <style>
         :root {
             --bg-ui: #f1f5f9;
@@ -11,12 +11,12 @@
             --text-muted: #64748b;
             --card-border: #94a3b8;
 
-            /* Medidas físicas exactas en milímetros (Sistema modular de 22mm) */
+            /* Exakte physische Maße in Millimetern (22mm-Modulsystem) */
             --card-h: 64mm;
-            --w-eighth: 22mm;   /* Media carta (0.5 tiempos) */
-            --w-quarter: 44mm;  /* 1 carta (1 tiempo) */
-            --w-half: 88mm;     /* 2 cartas juntas (2 tiempos) */
-            --w-whole: 176mm;   /* 4 cartas juntas (4 tiempos) */
+            --w-eighth: 22mm;   /* Halbe Karte (0,5 Schläge) */
+            --w-quarter: 44mm;  /* 1 Karte (1 Schlag) */
+            --w-half: 88mm;     /* 2 Karten zusammen (2 Schläge) */
+            --w-whole: 176mm;   /* 4 Karten zusammen (4 Schläge) */
         }
 
         * {
@@ -34,7 +34,7 @@
         }
 
         /* =========================================
-           BARRA DE CONTROL (SOLO PANTALLA)
+           STEUERLEISTE (NUR BILDSCHIRM)
            ========================================= */
         .toolbar {
             position: sticky;
@@ -93,6 +93,34 @@
 
         .print-btn:hover {
             background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .nav-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .nav-btn {
+            background: #f8fafc;
+            color: var(--text-dark);
+            border: 1.5px solid #cbd5e1;
+            padding: 9px 16px;
+            border-radius: 999px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s;
+        }
+
+        .nav-btn:hover {
+            background: #e2e8f0;
+            border-color: #94a3b8;
             transform: translateY(-1px);
         }
 
@@ -165,7 +193,7 @@
         }
 
         /* =========================================
-           LIENZO DE CARTAS
+           KARTENFLÄCHE
            ========================================= */
         .sheet-container {
             max-width: 210mm;
@@ -211,7 +239,7 @@
         }
 
         /* =========================================
-           DISEÑO DE LAS CARTAS (PROPORCIONES REALES)
+           KARTENDESIGN (ECHTE PROPORTIONEN)
            ========================================= */
         .card {
             position: relative;
@@ -234,13 +262,13 @@
             border-color: #cbd5e1;
         }
 
-        /* Anchos exactos */
+        /* Exakte Breiten */
         .card.dur-05 { width: var(--w-eighth); padding: 2mm 1.5mm; }
         .card.dur-1  { width: var(--w-quarter); }
         .card.dur-2  { width: var(--w-half); }
         .card.dur-4  { width: var(--w-whole); }
 
-        /* Guías internas sutiles de pulsos (para blancas y redondas) */
+        /* Dezente interne Schlag-Hilfslinien (für Halbe und Ganze) */
         .beat-guides {
             position: absolute;
             inset: 0;
@@ -258,7 +286,7 @@
             border-right: none;
         }
 
-        /* Esquinas superiores e inferiores */
+        /* Obere und untere Ecken */
         .corner {
             position: absolute;
             font-size: 8.5pt;
@@ -294,7 +322,7 @@
             font-weight: 700;
         }
 
-        /* Forma central de la nota (Círculo / Cápsula / Media cápsula) */
+        /* Zentrale Notenform (Kreis / Kapsel / Halbe Kapsel) */
         .note-shape {
             position: relative;
             z-index: 2;
@@ -305,7 +333,7 @@
             box-shadow: inset 0 0 0 0.6mm rgba(0, 0, 0, 0.14);
         }
 
-        /* Negra (1 tiempo): círculo perfecto */
+        /* Viertelnote (1 Schlag): perfekter Kreis */
         .card.dur-1 .note-shape {
             width: 30mm;
             height: 30mm;
@@ -313,7 +341,7 @@
             font-size: 16pt;
         }
 
-        /* Corchea (0.5 tiempos): media carta -> óvalo vertical compacto */
+        /* Achtelnote (0,5 Schläge): halbe Karte -> kompaktes vertikales Oval */
         .card.dur-05 .note-shape {
             width: 15.5mm;
             height: 30mm;
@@ -323,7 +351,7 @@
             box-shadow: none;
         }
 
-        /* Blanca (2 tiempos): cápsula alargada de 2 cartas */
+        /* Halbe Note (2 Schläge): längliche Kapsel über 2 Karten */
         .card.dur-2 .note-shape {
             width: 72mm;
             height: 30mm;
@@ -332,7 +360,7 @@
             box-shadow: inset 0 0 0 0.7mm rgba(0, 0, 0, 0.22);
         }
 
-        /* Redonda (4 tiempos): cápsula alargada de 4 cartas */
+        /* Ganze Note (4 Schläge): längliche Kapsel über 4 Karten */
         .card.dur-4 .note-shape {
             width: 160mm;
             height: 30mm;
@@ -341,7 +369,7 @@
             box-shadow: inset 0 0 0 0.7mm rgba(0, 0, 0, 0.22);
         }
 
-        /* Estilo para Silencios */
+        /* Stil für Pausen */
         .card.is-rest .note-shape {
             background-color: #e2e8f0 !important;
             border: 0.6mm dashed #94a3b8;
@@ -349,7 +377,7 @@
             color: #64748b !important;
         }
 
-        /* Etiqueta de duración en la base */
+        /* Dauer-Beschriftung unten */
         .dur-footer {
             position: absolute;
             bottom: 2.5mm;
@@ -369,7 +397,7 @@
         }
 
         /* =========================================
-           CUADRÍCULA IMPRIMIBLE PARA FOTO (ESCALA 1:1)
+           DRUCKBARES FOTORASTER (MASSSTAB 1:1)
            ========================================= */
         .board-sheet {
             display: flex;
@@ -408,7 +436,7 @@
             border-radius: 3mm;
         }
 
-        /* Miras de esquina de alto contraste para encuadrar la foto con el móvil */
+        /* Kontrastreiche Eckmarkierungen für die Smartphone-Kamera */
         .frame-corner {
             position: absolute;
             width: 8mm;
@@ -449,7 +477,7 @@
             justify-content: center;
         }
 
-        /* Fila exacta: sin huecos entre casillas para que las cartas encajen borde con borde */
+        /* Exakte Reihe ohne Lücken zwischen den Feldern */
         .board-row {
             display: flex;
             height: var(--card-h);
@@ -458,7 +486,7 @@
             position: relative;
         }
 
-        /* Pequeñas marcas en las 4 esquinas de cada fila para alinear filas por separado en el escáner */
+        /* Kleine Markierungen an den 4 Ecken jeder Reihe für den Scanner */
         .row-tick {
             position: absolute;
             width: 2.5mm;
@@ -486,7 +514,7 @@
             border-right: none;
         }
 
-        /* Línea punteada suave en el centro (22mm) para colocar dos medias cartas (corcheas) */
+        /* Feine gepunktete Mittellinie (22mm) für zwei halbe Karten (Achtel) */
         .board-slot::after {
             content: "";
             position: absolute;
@@ -530,7 +558,7 @@
             display: flex;
         }
 
-        /* Visibilidad condicional desde controles */
+        /* Bedingte Sichtbarkeit über die Steuerung */
         body.hide-letters .note-letter,
         body.hide-letters .corner-letter {
             display: none;
@@ -542,7 +570,7 @@
         }
 
         /* =========================================
-           ESTILOS DE IMPRESIÓN (A4 EXACTO)
+           DRUCK-STILE (EXAKT DIN A4)
            ========================================= */
         @page {
             size: A4 portrait;
@@ -576,41 +604,45 @@
         <div class="toolbar-inner">
             <div class="toolbar-top">
                 <div class="title-block">
-                    <h1>🎵 Baraja Física — Farbmelodien</h1>
-                    <p>Sistema modular exacto: Corcheas (22×64 mm) · Negras (44×64 mm) · Blancas (88×64 mm) · Redondas (176×64 mm)</p>
+                    <h1>🎵 Physisches Kartenspiel — Farbmelodien</h1>
+                    <p>Exaktes Modulsystem: Achtel (22×64 mm) · Viertel (44×64 mm) · Halbe (88×64 mm) · Ganze (176×64 mm)</p>
                 </div>
-                <button class="print-btn" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+                <div class="nav-links">
+                    <a href="Escaner.html" class="nav-btn">📷 Scanner</a>
+                    <a href="simulador_baraja.html" class="nav-btn">🎹 Simulator</a>
+                    <button class="print-btn" onclick="window.print()">🖨️ Drucken / Als PDF speichern</button>
+                </div>
             </div>
 
             <div class="controls-row">
                 <div class="control-group">
-                    <button class="pill-btn active" id="modeCatalog" onclick="setDeckMode('catalog')">Catálogo completo (1 de cada)</button>
-                    <button class="pill-btn" id="modePlayable" onclick="setDeckMode('playable')">Mazo jugable (con copias)</button>
-                    <button class="pill-btn" id="modeBoard" onclick="setDeckMode('board')">📐 Cuadrícula para foto</button>
+                    <button class="pill-btn active" id="modeCatalog" onclick="setDeckMode('catalog')">Kompletter Katalog (je 1 Karte)</button>
+                    <button class="pill-btn" id="modePlayable" onclick="setDeckMode('playable')">Spielbares Deck (mit Kopien)</button>
+                    <button class="pill-btn" id="modeBoard" onclick="setDeckMode('board')">📐 Fotoraster</button>
                 </div>
 
                 <div class="control-group deck-controls">
                     <label class="toggle-label">
                         <input type="checkbox" checked onchange="toggleBodyClass('hide-letters', !this.checked)">
-                        Letras (C, D, E...)
+                        Buchstaben (C, D, E...)
                     </label>
                     <label class="toggle-label">
                         <input type="checkbox" checked onchange="toggleBodyClass('hide-symbols', !this.checked)">
-                        Símbolos (♪ ♩ 𝅗𝅥 𝅝)
+                        Symbole (♪ ♩ 𝅗𝅥 𝅝)
                     </label>
                     <label class="toggle-label">
                         <input type="checkbox" checked onchange="toggleBodyClass('no-cut-guides', !this.checked)">
-                        Líneas de corte
+                        Schnittlinien
                     </label>
                 </div>
 
                 <div class="control-group board-controls">
                     <button class="pill-btn active" id="boardBeats4" onclick="setBoardBeats(4)">4/4 (176 mm)</button>
                     <button class="pill-btn" id="boardBeats3" onclick="setBoardBeats(3)">3/4 (132 mm)</button>
-                    <button class="pill-btn" id="boardRows1" onclick="setBoardRows(1)">1 fila</button>
-                    <button class="pill-btn active" id="boardRows2" onclick="setBoardRows(2)">2 filas</button>
-                    <button class="pill-btn" id="boardRows3" onclick="setBoardRows(3)">3 filas</button>
-                    <button class="pill-btn" id="boardRows4" onclick="setBoardRows(4)">4 filas</button>
+                    <button class="pill-btn" id="boardRows1" onclick="setBoardRows(1)">1 Reihe</button>
+                    <button class="pill-btn active" id="boardRows2" onclick="setBoardRows(2)">2 Reihen</button>
+                    <button class="pill-btn" id="boardRows3" onclick="setBoardRows(3)">3 Reihen</button>
+                    <button class="pill-btn" id="boardRows4" onclick="setBoardRows(4)">4 Reihen</button>
                 </div>
             </div>
         </div>
@@ -621,7 +653,7 @@
     <main class="sheet-container" id="deckContainer"></main>
 
     <script>
-        // Código de colores exacto extraído de notation.html
+        // Exakter Farbcode aus notation.html
         const NOTES = [
             { id: 'C',  name: 'C',  color: '#ff3333', textColor: '#ffffff' },
             { id: 'D',  name: 'D',  color: '#ff8c00', textColor: '#ffffff' },
@@ -638,12 +670,12 @@
         const SECTIONS = [
             {
                 key: 'eighth',
-                title: '1. Corcheas — Medias cartas (½ tiempo)',
-                subtitle: '22 × 64 mm · Junta dos medias cartas para crear cualquiera de las 81 combinaciones posibles',
+                title: '1. Achtelnoten — Halbe Karten (½ Schlag)',
+                subtitle: '22 × 64 mm · Kombiniere zwei halbe Karten für alle 81 möglichen Kombinationen',
                 durClass: 'dur-05',
                 symbol: '♪',
                 restSymbol: '𝄾',
-                footer: '½ tiempo',
+                footer: '½ Schlag',
                 beats: 0.5,
                 includeRest: true,
                 playableCopies: 2,
@@ -651,12 +683,12 @@
             },
             {
                 key: 'quarter',
-                title: '2. Negras — Cartas estándar (1 tiempo)',
-                subtitle: '44 × 64 mm · Unidad base del compás',
+                title: '2. Viertelnoten — Standardkarten (1 Schlag)',
+                subtitle: '44 × 64 mm · Grundeinheit des Taktes',
                 durClass: 'dur-1',
                 symbol: '♩',
                 restSymbol: '𝄽',
-                footer: '1 tiempo',
+                footer: '1 Schlag',
                 beats: 1,
                 includeRest: true,
                 playableCopies: 4,
@@ -664,12 +696,12 @@
             },
             {
                 key: 'half',
-                title: '3. Blancas — Dos cartas juntas (2 tiempos)',
-                subtitle: '88 × 64 mm · Equivale a 2 negras seguidas',
+                title: '3. Halbe Noten — Doppelte Karten (2 Schläge)',
+                subtitle: '88 × 64 mm · Entspricht 2 Viertelnoten hintereinander',
                 durClass: 'dur-2',
                 symbol: '𝅗𝅥',
                 restSymbol: '𝄼',
-                footer: '2 tiempos',
+                footer: '2 Schläge',
                 beats: 2,
                 includeRest: true,
                 playableCopies: 2,
@@ -677,12 +709,12 @@
             },
             {
                 key: 'whole',
-                title: '4. Redondas — Cuatro cartas juntas (4 tiempos)',
-                subtitle: '176 × 64 mm · Ocupa un compás completo de 4/4',
+                title: '4. Ganze Noten — Vierfache Karten (4 Schläge)',
+                subtitle: '176 × 64 mm · Füllt einen kompletten 4/4-Takt',
                 durClass: 'dur-4',
                 symbol: '𝅝',
                 restSymbol: '𝄻',
-                footer: '4 tiempos',
+                footer: '4 Schläge',
                 beats: 4,
                 includeRest: false,
                 playableCopies: 1,
@@ -728,7 +760,7 @@
             const displayLabel = isRest ? symbol : item.name;
             const cornerLabel = isRest ? '' : item.name;
 
-            // Guías sutiles de división de pulsos para cartas dobles y cuádruples
+            // Dezente Hilfslinien zur Schlag-Unterteilung bei doppelten und vierfachen Karten
             let guidesHTML = '';
             if (section.beats >= 2) {
                 let slots = '';
@@ -738,7 +770,7 @@
                 guidesHTML = `<div class="beat-guides">${slots}</div>`;
             }
 
-            // En corcheas, ponemos el símbolo arriba y abajo para aprovechar el ancho de 22mm
+            // Bei Achtelnoten wird das Symbol oben und unten platziert, um die 22mm Breite optimal zu nutzen
             const topCorner = section.beats === 0.5
                 ? `<div class="corner top-left"><span class="symbol-badge">${symbol}</span></div>`
                 : `<div class="corner top-left"><span class="corner-letter">${cornerLabel}</span><span class="symbol-badge">${symbol}</span></div>`;
@@ -791,8 +823,8 @@
             container.innerHTML = `
                 <section class="board-sheet">
                     <div class="board-header">
-                        <h2>📐 Tablero de Encuadre — Farbmelodien (${boardBeats}/4)</h2>
-                        <span>${boardRows} ${boardRows === 1 ? 'fila' : 'filas'} · Escala 1:1 (${widthMm} × ${heightMm} mm)</span>
+                        <h2>📐 Ausrichtungsbrett — Farbmelodien (${boardBeats}/4)</h2>
+                        <span>${boardRows} ${boardRows === 1 ? 'Reihe' : 'Reihen'} · Maßstab 1:1 (${widthMm} × ${heightMm} mm)</span>
                     </div>
 
                     <div class="board-frame">
@@ -806,15 +838,15 @@
                     </div>
 
                     <p class="board-tip">
-                        Coloca las cartas pegadas entre sí dentro de cada fila y haz la foto desde arriba alineando las <strong>esquinas negras</strong> con la rejilla del escáner. Imprime siempre al <strong>100 % de escala</strong>.
+                        Lege die Karten in jeder Reihe lückenlos aneinander und fotografiere sie von oben, sodass die <strong>schwarzen Ecken</strong> am Raster des Scanners ausgerichtet sind. Immer im <strong>100 % Maßstab</strong> drucken.
                     </p>
                 </section>
             `;
 
             statsBar.innerHTML = `
-                <div class="stat-chip">Compás: <strong>${boardBeats}/4</strong></div>
-                <div class="stat-chip">Filas: <strong>${boardRows}</strong></div>
-                <div class="stat-chip">Tamaño real: <strong>${widthMm} × ${heightMm} mm</strong> (cabe en 1 folio A4)</div>
+                <div class="stat-chip">Taktart: <strong>${boardBeats}/4</strong></div>
+                <div class="stat-chip">Reihen: <strong>${boardRows}</strong></div>
+                <div class="stat-chip">Originalgröße: <strong>${widthMm} × ${heightMm} mm</strong> (passt auf 1 DIN-A4-Blatt)</div>
             `;
         }
 
@@ -866,7 +898,7 @@
             });
 
             statsBar.innerHTML = `
-                <div class="stat-chip">Total en pantalla: <strong>${totalCards} cartas</strong></div>
+                <div class="stat-chip">Gesamt auf dem Bildschirm: <strong>${totalCards} Karten</strong></div>
                 ${sectionCounts.map(s => `<div class="stat-chip">${s}</div>`).join('')}
             `;
         }
